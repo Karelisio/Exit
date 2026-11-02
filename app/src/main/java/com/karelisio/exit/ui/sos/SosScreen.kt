@@ -1,5 +1,8 @@
 package com.karelisio.exit.ui.sos
 
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -100,25 +103,25 @@ private enum class SosStep { RUNNING, DONE }
 private data class Rhythm(val inhale: Float, val exhale: Float, val label: String)
 
 private val RHYTHMS = listOf(
-    Rhythm(5f, 5f, "Cohérence 5·5"),
-    Rhythm(4f, 6f, "Apaisant 4·6"),
-    Rhythm(4f, 4f, "Court 4·4"),
-    Rhythm(6f, 6f, "Lent 6·6"),
+    Rhythm(5f, 5f, str(R.string.sos_coherence_55)),
+    Rhythm(4f, 6f, str(R.string.sos_apaisant_46)),
+    Rhythm(4f, 4f, str(R.string.sos_court_44)),
+    Rhythm(6f, 6f, str(R.string.sos_lent_66)),
 )
 
 private val IDEAS = listOf(
-    "Bois un grand verre d'eau, lentement.",
-    "Passe-toi de l'eau froide sur le visage et les mains.",
-    "Marche deux minutes, même dans la pièce.",
-    "Écris en une phrase pourquoi tu veux arrêter.",
-    "Envoie un message à quelqu'un que tu aimes.",
-    "Mâche un chewing-gum ou croque une pomme.",
-    "Fais 10 squats ou 10 pompes contre un mur.",
-    "Range un tiroir ou ta table pendant 3 minutes.",
-    "Brosse-toi les dents : le goût change tout.",
-    "Mets une chanson que tu adores et écoute-la en entier.",
-    "Compte à rebours de 100 de 7 en 7.",
-    "Regarde par la fenêtre et nomme 5 choses que tu vois.",
+    str(R.string.sos_bois_un_grand_verre_d),
+    str(R.string.sos_passe_toi_de_l_eau),
+    str(R.string.sos_marche_deux_minutes_meme_dans),
+    str(R.string.sos_ecris_en_une_phrase_pourquoi),
+    str(R.string.sos_envoie_un_message_a_quelqu),
+    str(R.string.sos_mache_un_chewing_gum_ou),
+    str(R.string.sos_fais_10_squats_ou_10),
+    str(R.string.sos_range_un_tiroir_ou_ta),
+    str(R.string.sos_brosse_toi_les_dents_le),
+    str(R.string.sos_mets_une_chanson_que_tu),
+    str(R.string.sos_compte_a_rebours_de_100),
+    str(R.string.sos_regarde_par_la_fenetre_et),
 )
 
 /**
@@ -163,8 +166,8 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { nav.back() }) { Icon(Icons.Rounded.Close, contentDescription = "Fermer") }
-                    Text("SOS envie", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { nav.back() }) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.home_fermer)) }
+                    Text(stringResource(R.string.components_sos_envie), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 }
                 AnimatedContent(
                     targetState = step,
@@ -246,12 +249,12 @@ private fun Running(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            if (remaining > 0) "Ça va passer." else "5 minutes. Tu as tenu.",
+            if (remaining > 0) stringResource(R.string.sos_ca_va_passer) else stringResource(R.string.sos_5_minutes_tu_as_tenu),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
         )
         Text(
-            if (remaining > 0) "Une envie dure 3 à 5 minutes. Respire avec la forme." else "L'envie a sûrement baissé. Comment ça va ?",
+            if (remaining > 0) stringResource(R.string.sos_une_envie_dure_3_a) else stringResource(R.string.sos_l_envie_a_surement_baisse),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -261,7 +264,7 @@ private fun Running(
             ReasonCard(reasons)
         }
         Spacer(Modifier.height(12.dp))
-        IntensityRow("Intensité de l'envie", intensity, onIntensity)
+        IntensityRow(stringResource(R.string.sos_intensite_de_l_envie), intensity, onIntensity)
         Breathing(inhale, exhale, hapticsOn, Modifier.fillMaxWidth(0.82f))
         Spacer(Modifier.height(8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -287,12 +290,12 @@ private fun Running(
             onClick = onOvercome,
             shapes = ButtonDefaults.shapes(),
             modifier = Modifier.fillMaxWidth().height(64.dp),
-        ) { Text("L'envie est passée 💪", style = MaterialTheme.typography.titleMedium) }
-        TextButton(onClick = onGaveIn) { Text("J'ai craqué, ce n'est pas grave") }
+        ) { Text(stringResource(R.string.sos_l_envie_est_passee), style = MaterialTheme.typography.titleMedium) }
+        TextButton(onClick = onGaveIn) { Text(stringResource(R.string.sos_j_ai_craque_ce_n)) }
 
         Spacer(Modifier.height(12.dp))
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            listOf("Petit jeu", "Idées").forEachIndexed { i, label ->
+            listOf(stringResource(R.string.sos_petit_jeu), stringResource(R.string.sos_idees)).forEachIndexed { i, label ->
                 SegmentedButton(
                     selected = tab == i,
                     onClick = { tab = i },
@@ -307,7 +310,7 @@ private fun Running(
 
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = { showContext = !showContext }) {
-            Text("Qu'est-ce qui l'a déclenchée ? (facultatif)")
+            Text(stringResource(R.string.sos_qu_est_ce_qui_l))
             Icon(if (showContext) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, contentDescription = null)
         }
         AnimatedVisibility(showContext, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
@@ -389,7 +392,7 @@ private fun Breathing(inhale: Float, exhale: Float, hapticsOn: Boolean, modifier
                 label = "breathLabel",
             ) { i ->
                 Text(
-                    if (i) "Inspire" else "Expire",
+                    if (i) stringResource(R.string.sos_inspire) else stringResource(R.string.sos_expire),
                     style = MaterialTheme.typography.headlineMedium,
                     color = scheme.onPrimaryContainer,
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
@@ -416,7 +419,7 @@ private fun IntensityRow(label: String, value: Int?, onChange: (Int?) -> Unit) {
                         onChange(if (value == i) null else i)
                     },
                     label = { Text("$i") },
-                    modifier = Modifier.semantics { contentDescription = "Intensité $i sur 5" },
+                    modifier = Modifier.semantics { contentDescription = str(R.string.sos_intensite_sur_5, i) },
                 )
             }
         }
@@ -435,7 +438,7 @@ private fun ReasonCard(reasons: List<String>) {
     }
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Ta raison", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            Text(stringResource(R.string.sos_ta_raison), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onTertiaryContainer)
             AnimatedContent(
                 targetState = reasons[index % reasons.size],
                 transitionSpec = { (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut()) },
@@ -468,7 +471,7 @@ private fun Ideas() {
         }
         Spacer(Modifier.height(8.dp))
         FilledTonalButton(onClick = { index = (index + 1 + (0 until IDEAS.size - 1).random()) % IDEAS.size }, shapes = ButtonDefaults.shapes()) {
-            Text("Une autre idée")
+            Text(stringResource(R.string.sos_une_autre_idee))
         }
     }
 }
@@ -491,16 +494,16 @@ private fun Done(victories: Int, startIntensity: Int?, onEndIntensity: (Int) -> 
             rotationDeg = if (LocalReduceMotion.current) 0f else spin,
         )
         Spacer(Modifier.height(24.dp))
-        Text("Envie surmontée !", style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.sos_envie_surmontee), style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(
-            if (victories <= 1) "C'est ta première victoire. Elle compte énormément." else "C'est ta ${victories}e victoire. L'envie est passée, toi tu es resté·e.",
+            if (victories <= 1) stringResource(R.string.sos_c_est_ta_premiere_victoire) else stringResource(R.string.sos_c_est_ta_e_victoire, victories),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
-        IntensityRow("Et maintenant, l'envie ?", end) { v ->
+        IntensityRow(stringResource(R.string.sos_et_maintenant_l_envie), end) { v ->
             end = v
             if (v != null) onEndIntensity(v)
         }
@@ -508,16 +511,16 @@ private fun Done(victories: Int, startIntensity: Int?, onEndIntensity: (Int) -> 
             val from = startIntensity ?: 0
             val to = end ?: 0
             Text(
-                if (to < from) "De $from à $to : elle est bien redescendue." else "Elle est encore là, et c'est normal : tu l'as quand même traversée.",
+                if (to < from) stringResource(R.string.sos_de_a_elle_est_bien, from, to) else stringResource(R.string.sos_elle_est_encore_la_et),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
             )
         }
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onBack, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Retour") }
+        Button(onClick = onBack, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.components_retour)) }
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onAgain) { Text("Encore un peu de respiration") }
+        TextButton(onClick = onAgain) { Text(stringResource(R.string.sos_encore_un_peu_de_respiration)) }
         Spacer(Modifier.size(1.dp))
     }
 }

@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui
 
+import com.karelisio.exit.str
+import com.karelisio.exit.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.karelisio.exit.AppContainer
@@ -100,7 +102,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
 
     fun backupNow() = viewModelScope.launch {
         val ok = container.autoBackup.runIfDue(force = true)
-        _events.emit(UiEvent.Message(if (ok) "Sauvegarde enregistrée" else "Sauvegarde impossible : choisis à nouveau le dossier"))
+        _events.emit(UiEvent.Message(if (ok) str(R.string.ui_sauvegarde_enregistree) else str(R.string.ui_sauvegarde_impossible_choisis_a_nouveau)))
     }
 
     fun deleteCraving(craving: CravingEntity) = viewModelScope.launch { repo.deleteCraving(craving) }
@@ -120,8 +122,8 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
 
     fun importJson(text: String) = viewModelScope.launch {
         val message = runCatching { repo.importJson(text) }.fold(
-            onSuccess = { "Sauvegarde restaurée : ${it.smokes.size} cigarettes, ${it.cravings.size} envies." },
-            onFailure = { "Fichier invalide : ce n'est pas une sauvegarde Exit." },
+            onSuccess = { str(R.string.ui_sauvegarde_restauree_cigarettes_envies, it.smokes.size, it.cravings.size) },
+            onFailure = { str(R.string.ui_fichier_invalide_ce_n_est) },
         )
         _events.emit(UiEvent.Message(message))
     }

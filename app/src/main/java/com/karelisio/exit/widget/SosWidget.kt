@@ -1,5 +1,6 @@
 package com.karelisio.exit.widget
 
+import com.karelisio.exit.str
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,7 @@ class SosWidget : GlanceAppWidget() {
                         .background(GlanceTheme.colors.tertiaryContainer)
                         .cornerRadius(android.R.dimen.system_app_widget_background_radius)
                         .clickable(actionStartActivity(intent))
-                        .semantics { contentDescription = "SOS envie" }
+                        .semantics { contentDescription = str(R.string.components_sos_envie) }
                         .padding(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically,

@@ -46,7 +46,7 @@ class AlarmReceiver : BroadcastReceiver() {
                         container.notifications.showWeeklyReview(review)
                     }
                     ACTION_MIDNIGHT -> {
-                        repo.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it.message) }
+                        repo.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it) }
                     }
                 }
                 container.refreshSchedules()

@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.components
 
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -43,7 +45,7 @@ fun SosFab(onClick: () -> Unit, modifier: Modifier = Modifier, expanded: Boolean
         },
         expanded = expanded,
         icon = { Icon(Icons.Rounded.Support, contentDescription = null) },
-        text = { Text("SOS envie") },
+        text = { Text(stringResource(R.string.components_sos_envie)) },
         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 3.dp),
@@ -62,7 +64,7 @@ fun ExitTopBar(
         title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() }) },
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour") }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.components_retour)) }
             }
         },
         actions = { actions() },

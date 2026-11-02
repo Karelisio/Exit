@@ -91,7 +91,7 @@ class PlanEngineTest {
         adj!!
         assertTrue(adj.anchorPerDay > 3.0 && adj.anchorPerDay < 12.0)
         assertTrue(adj.quitEpochDay!! > c.quitEpochDay!!)
-        assertTrue(adj.message.contains("douceur"))
+        assertNotNull(adj.pushedTo)
     }
 
     @Test

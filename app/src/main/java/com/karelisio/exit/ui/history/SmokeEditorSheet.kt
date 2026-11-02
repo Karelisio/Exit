@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.history
 
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -66,7 +68,7 @@ fun SmokeEditorSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text(if (initial == null) "Ajouter un oubli" else "Modifier", style = MaterialTheme.typography.headlineSmall)
+            Text(if (initial == null) stringResource(R.string.history_ajouter_un_oubli) else stringResource(R.string.history_modifier), style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilledTonalButton(onClick = { pickDate = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) {
@@ -79,10 +81,10 @@ fun SmokeEditorSheet(
                 }
             }
             if (inFuture) {
-                Text("Cette heure est dans le futur.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+                Text(stringResource(R.string.history_cette_heure_est_dans_le), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
             }
             Spacer(Modifier.height(16.dp))
-            Text("Contexte (facultatif)", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.history_contexte_facultatif), style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(6.dp))
             TriggerChips(trigger, note, { trigger = it }, { note = it })
             Spacer(Modifier.height(20.dp))
@@ -91,10 +93,10 @@ fun SmokeEditorSheet(
                 enabled = !inFuture,
                 shapes = ButtonDefaults.shapes(),
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-            ) { Text("Enregistrer") }
+            ) { Text(stringResource(R.string.history_enregistrer)) }
             if (onDelete != null) {
                 TextButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                    Text("Supprimer", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.history_supprimer), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -114,9 +116,9 @@ fun SmokeEditorSheet(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { date = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
                     pickDate = false
-                }) { Text("OK") }
+                }) { Text(stringResource(android.R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickDate = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { pickDate = false }) { Text(stringResource(R.string.history_annuler)) } },
         ) { DatePicker(state) }
     }
     if (pickTime) {
@@ -127,9 +129,9 @@ fun SmokeEditorSheet(
                 TextButton(onClick = {
                     time = LocalTime.of(state.hour, state.minute)
                     pickTime = false
-                }) { Text("OK") }
+                }) { Text(stringResource(android.R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickTime = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { pickTime = false }) { Text(stringResource(R.string.history_annuler)) } },
             text = { TimePicker(state) },
         )
     }

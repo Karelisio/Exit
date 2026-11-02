@@ -1,6 +1,8 @@
 package com.karelisio.exit.data
 
 import androidx.room.withTransaction
+import com.karelisio.exit.R
+import com.karelisio.exit.str
 import com.karelisio.exit.domain.DAY_MS
 import com.karelisio.exit.domain.HOUR_MS
 import com.karelisio.exit.domain.HealthMilestones
@@ -93,7 +95,7 @@ class ExitRepository(
                 reasons = reasons.trim(),
             ),
         )
-        if (!current.onboardingDone) event(PlanEventType.START, "Début du plan : $cigsPerDay cigarettes par jour au départ.")
+        if (!current.onboardingDone) event(PlanEventType.START, str(R.string.data_debut_du_plan_cigarettes_par, cigsPerDay))
         changed()
     }
 
@@ -118,7 +120,7 @@ class ExitRepository(
         val bonus = if (!quit && next != null && at > next && at - next < 6 * HOUR_MS) ((at - next) / MINUTE_MS).toInt() else 0
         val smoke = SmokeEntity(timestamp = at, early = early, trigger = trigger, note = note, slip = quit, bonusMinutes = bonus)
         val id = db.smokes().insert(smoke)
-        if (quit) event(PlanEventType.SLIP, "Un écart, noté sans jugement. Tout ce qui a été gagné reste acquis.", at)
+        if (quit) event(PlanEventType.SLIP, str(R.string.data_un_ecart_note_sans_jugement), at)
         changed()
         val minutesEarly = if (early) (((next ?: at) - at) / MINUTE_MS).toInt() else 0
         return SmokeLogged(smoke.copy(id = id), minutesEarly)
@@ -173,12 +175,19 @@ class ExitRepository(
     // --- Plan ---------------------------------------------------------------------------------
 
     /** Vérifie un éventuel dérapage et réajuste le plan en douceur. Renvoie l'ajustement appliqué. */
-    suspend fun runDriftCheck(now: Long = clock()): PlanAdjustment? {
+    suspend fun runDriftCheck(now: Long = clock()): String? {
         val c = config()
         if (!c.onboardingDone) return null
         val zone = zone()
         val perDay = db.smokes().since(now - 5 * DAY_MS).groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount()
         val adjustment = PlanEngine.driftAdjustment(c, { perDay[it] ?: 0 }, now, zone) ?: return null
+        val message = buildString {
+            append(str(R.string.adjust_message, adjustment.anchorPerDay.roundToInt(), PlanEngine.formatDuration(adjustment.intervalMinutes)))
+            adjustment.pushedTo?.let {
+                append(' ')
+                append(str(R.string.adjust_message_pushed, it.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM"))))
+            }
+        }
         db.config().upsert(
             c.copy(
                 planAnchorAt = adjustment.anchorAt,
@@ -186,12 +195,12 @@ class ExitRepository(
                 quitEpochDay = adjustment.quitEpochDay,
                 manualOffsetMinutes = 0,
                 lastAutoAdjustAt = now,
-                adjustmentMessage = adjustment.message,
+                adjustmentMessage = message,
             ),
         )
-        event(PlanEventType.AUTO_ADJUST, adjustment.message, now)
+        event(PlanEventType.AUTO_ADJUST, message, now)
         changed()
-        return adjustment
+        return message
     }
 
     suspend fun dismissAdjustmentMessage() {
@@ -203,14 +212,14 @@ class ExitRepository(
         val offset = (c.manualOffsetMinutes + deltaMinutes).coerceIn(-240, 600)
         db.config().upsert(c.copy(manualOffsetMinutes = offset))
         val sign = if (deltaMinutes > 0) "+" else "−"
-        event(PlanEventType.MANUAL_ADJUST, "Intervalle ajusté à la main ($sign${kotlin.math.abs(deltaMinutes)} min).")
+        event(PlanEventType.MANUAL_ADJUST, str(R.string.data_intervalle_ajuste_a_la_main, sign, kotlin.math.abs(deltaMinutes)))
         changed()
     }
 
     suspend fun setQuitDay(day: LocalDate?) {
         val c = config()
         db.config().upsert(c.copy(quitEpochDay = day?.toEpochDay()))
-        event(PlanEventType.MANUAL_ADJUST, if (day == null) "Plus de date cible : on espace d'abord." else "Nouvelle date d'arrêt choisie.")
+        event(PlanEventType.MANUAL_ADJUST, if (day == null) str(R.string.data_plus_de_date_cible_on) else str(R.string.data_nouvelle_date_d_arret_choisie))
         changed()
     }
 
@@ -233,7 +242,7 @@ class ExitRepository(
                 manualOffsetMinutes = 0,
             ),
         )
-        event(PlanEventType.MANUAL_ADJUST, "Plan recalculé depuis aujourd'hui : environ ${perDay.roundToInt()} par jour.")
+        event(PlanEventType.MANUAL_ADJUST, str(R.string.data_plan_recalcule_depuis_aujourd_hui, perDay.roundToInt()))
         changed()
     }
 
@@ -258,7 +267,7 @@ class ExitRepository(
                 lastCelebratedMilestoneMinutes = HealthMilestones.reached(streakMinutes).lastOrNull()?.minutes ?: 0,
             ),
         )
-        event(PlanEventType.QUIT, "Arrêt complet : c'est parti !")
+        event(PlanEventType.QUIT, str(R.string.data_arret_complet_c_est_parti))
         changed()
     }
 
@@ -286,7 +295,7 @@ class ExitRepository(
                 lastCelebratedMilestoneMinutes = 0,
             ),
         )
-        event(PlanEventType.RESUME_PLAN, "On repart sur le plan, en douceur. L'historique et les gains sont conservés.")
+        event(PlanEventType.RESUME_PLAN, str(R.string.data_on_repart_sur_le_plan))
         changed()
     }
 
@@ -315,7 +324,7 @@ class ExitRepository(
     /** Remplace toutes les données par celles de la sauvegarde. Lève une exception si le fichier est invalide. */
     suspend fun importJson(text: String): Backup {
         val backup = json.decodeFromString(Backup.serializer(), text)
-        require(backup.format == Backup.FORMAT) { "Format inconnu" }
+        require(backup.format == Backup.FORMAT) { str(R.string.data_format_inconnu) }
         db.withTransaction {
             db.smokes().clear()
             db.cravings().clear()
@@ -325,7 +334,7 @@ class ExitRepository(
             db.cravings().insertAll(backup.cravings)
             db.planEvents().insertAll(backup.planEvents)
         }
-        event(PlanEventType.IMPORT, "Sauvegarde restaurée.")
+        event(PlanEventType.IMPORT, str(R.string.data_sauvegarde_restauree))
         changed()
         return backup
     }

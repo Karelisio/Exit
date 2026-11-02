@@ -1,5 +1,6 @@
 package com.karelisio.exit.notify
 
+import com.karelisio.exit.str
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
@@ -57,9 +58,9 @@ class SmokeTileService : TileService() {
             val now = System.currentTimeMillis()
             val (label, subtitle) = if (snapshot.phase == Phase.QUIT) {
                 val start = listOfNotNull(snapshot.lastSmokeAt, container.repository.config().quitStartedAt).maxOrNull() ?: now
-                "Sans fumer" to "${(now - start) / DAY_MS} j"
+                str(R.string.notify_sans_fumer) to str(R.string.components_j, (now - start) / DAY_MS)
             } else {
-                "J'en fume une" to (snapshot.nextAllowedAt?.takeIf { it > now }?.let { "Prochaine à ${Fmt.time(it)}" } ?: "C'est OK · aujourd'hui ${snapshot.todayCount}")
+                str(R.string.home_j_en_fume_une) to (snapshot.nextAllowedAt?.takeIf { it > now }?.let { str(R.string.notify_prochaine_a, Fmt.time(it)) } ?: str(R.string.notify_c_est_ok_aujourd_hui, snapshot.todayCount))
             }
             withContext(Dispatchers.Main) {
                 val tile = qsTile ?: return@withContext
@@ -78,7 +79,7 @@ class SosTileService : TileService() {
     override fun onStartListening() {
         qsTile?.apply {
             label = getString(R.string.shortcut_sos)
-            subtitle = "Respire 5 min"
+            subtitle = str(R.string.notify_respire_5_min)
             state = Tile.STATE_INACTIVE
             updateTile()
         }

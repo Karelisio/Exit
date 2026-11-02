@@ -1,5 +1,8 @@
 package com.karelisio.exit.ui.review
 
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -54,7 +57,7 @@ fun ReviewScreen(vm: AppViewModel, nav: Navigator) {
         Scaffold(
             modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
             contentWindowInsets = WindowInsets.navigationBars,
-            topBar = { ExitTopBar("Ta semaine", scroll, onBack = { nav.back() }) },
+            topBar = { ExitTopBar(stringResource(R.string.review_ta_semaine), scroll, onBack = { nav.back() }) },
         ) { padding ->
             LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
@@ -67,35 +70,35 @@ fun ReviewScreen(vm: AppViewModel, nav: Navigator) {
                             ShapeIcon(Icons.Rounded.CalendarMonth, MaterialShapes.Cookie9Sided, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary)
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text("Du ${Fmt.dayShort(review.start)} au ${Fmt.dayShort(review.end)}", style = MaterialTheme.typography.labelLarge, color = on)
-                        CountUpText(review.smokes.toDouble(), { "${it.toInt()} cigarettes" }, MaterialTheme.typography.displaySmall, color = on)
+                        Text(stringResource(R.string.review_du_au, Fmt.dayShort(review.start), Fmt.dayShort(review.end)), style = MaterialTheme.typography.labelLarge, color = on)
+                        CountUpText(review.smokes.toDouble(), { str(R.string.review_cigarettes, it.toInt()) }, MaterialTheme.typography.displaySmall, color = on)
                         val change = review.change
                         Text(
                             when {
-                                change == null -> "Première semaine suivie : c'est la base de tes progrès."
-                                change < 0 -> "${-change} % de moins que la semaine d'avant. Bravo !"
-                                change == 0 -> "Autant que la semaine d'avant : tu tiens le cap."
-                                else -> "Un peu plus que la semaine d'avant (+$change %). Ça arrive : le plan s'adapte, toi tu continues."
+                                change == null -> stringResource(R.string.review_premiere_semaine_suivie_c_est)
+                                change < 0 -> stringResource(R.string.review_less, -change)
+                                change == 0 -> stringResource(R.string.review_autant_que_la_semaine_d)
+                                else -> stringResource(R.string.review_more, change)
                             },
                             style = MaterialTheme.typography.bodyLarge,
                             color = on,
                         )
                     }
                 }
-                item { Line("Envies surmontées", "${review.cravingsOvercome} / ${review.cravingsTotal}", Modifier.cascade(1)) }
-                item { Line("Bonus tenu", if (review.bonusMinutes > 0) Fmt.duration(review.bonusMinutes * 60_000L) else "—", Modifier.cascade(2)) }
-                item { Line("Économisé cette semaine", Fmt.money(review.money), Modifier.cascade(3)) }
-                item { Line("Jours sans fumer", "${review.smokeFreeDays}", Modifier.cascade(4)) }
+                item { Line(stringResource(R.string.stats_envies_surmontees), "${review.cravingsOvercome} / ${review.cravingsTotal}", Modifier.cascade(1)) }
+                item { Line(stringResource(R.string.review_bonus_tenu), if (review.bonusMinutes > 0) Fmt.duration(review.bonusMinutes * 60_000L) else "—", Modifier.cascade(2)) }
+                item { Line(stringResource(R.string.review_economise_cette_semaine), Fmt.money(review.money), Modifier.cascade(3)) }
+                item { Line(stringResource(R.string.review_jours_sans_fumer), "${review.smokeFreeDays}", Modifier.cascade(4)) }
                 review.bestDay?.let { (day, count) ->
-                    item { Line("Meilleur jour", "${Fmt.dayLabel(day)} · $count", Modifier.cascade(5)) }
+                    item { Line(stringResource(R.string.review_meilleur_jour), "${Fmt.dayLabel(day)} · $count", Modifier.cascade(5)) }
                 }
                 review.morningDelay?.let { delay ->
                     item {
                         val prev = review.previousMorningDelay
                         val diff = prev?.let { delay - it }
                         Line(
-                            "Première du matin (après le réveil)",
-                            PlanEngine.formatDuration(delay) + (diff?.takeIf { it != 0 }?.let { if (it > 0) " (+$it min)" else " ($it min)" } ?: ""),
+                            stringResource(R.string.review_premiere_du_matin_apres_le),
+                            PlanEngine.formatDuration(delay) + (diff?.takeIf { it != 0 }?.let { if (it > 0) stringResource(R.string.review_min, it) else stringResource(R.string.review_min_2, it) } ?: ""),
                             Modifier.cascade(6),
                         )
                     }

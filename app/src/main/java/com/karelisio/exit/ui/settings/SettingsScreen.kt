@@ -1,5 +1,8 @@
 package com.karelisio.exit.ui.settings
 
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -105,7 +108,7 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
                 val json = vm.exportJson()
                 withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) } }
             }.isSuccess
-            vm.message(if (ok) "Sauvegarde exportée" else "Export impossible")
+            vm.message(if (ok) str(R.string.settings_sauvegarde_exportee) else str(R.string.settings_export_impossible))
         }
     }
     var reasonsEdit by remember { mutableStateOf(false) }
@@ -126,52 +129,52 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             pendingImport = runCatching {
                 withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }
             }.getOrNull()
-            if (pendingImport == null) vm.message("Lecture du fichier impossible")
+            if (pendingImport == null) vm.message(str(R.string.settings_lecture_du_fichier_impossible))
         }
     }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets.navigationBars,
-        topBar = { ExitTopBar("Réglages", scroll, onBack = { nav.back() }) },
+        topBar = { ExitTopBar(stringResource(R.string.settings_reglages), scroll, onBack = { nav.back() }) },
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            item { SectionTitle("Ma consommation de départ") }
+            item { SectionTitle(stringResource(R.string.settings_ma_consommation_de_depart)) }
             item {
-                Row(Icons.Rounded.SmokingRooms, MaterialShapes.Cookie4Sided, "Cigarettes par jour", "${c.cigsPerDay}", Modifier.cascade(0)) {
-                    edit = Edit.Number("Cigarettes par jour", c.cigsPerDay.toString(), false) { cfg, v -> v.toIntOrNull()?.takeIf { it in 1..80 }?.let { cfg.copy(cigsPerDay = it) } }
+                Row(Icons.Rounded.SmokingRooms, MaterialShapes.Cookie4Sided, stringResource(R.string.settings_cigarettes_par_jour), "${c.cigsPerDay}", Modifier.cascade(0)) {
+                    edit = Edit.Number(str(R.string.settings_cigarettes_par_jour), c.cigsPerDay.toString(), false) { cfg, v -> v.toIntOrNull()?.takeIf { it in 1..80 }?.let { cfg.copy(cigsPerDay = it) } }
                 }
             }
             item {
-                Row(Icons.Rounded.Euro, MaterialShapes.Clover4Leaf, "Prix du paquet", "%.2f €".format(c.packPrice), Modifier.cascade(1)) {
-                    edit = Edit.Number("Prix du paquet (€)", "%.2f".format(c.packPrice).replace(',', '.'), true) { cfg, v ->
+                Row(Icons.Rounded.Euro, MaterialShapes.Clover4Leaf, stringResource(R.string.settings_prix_du_paquet), com.karelisio.exit.ui.components.Fmt.money(c.packPrice), Modifier.cascade(1)) {
+                    edit = Edit.Number(str(R.string.settings_prix_du_paquet_2), "%.2f".format(c.packPrice).replace(',', '.'), true) { cfg, v ->
                         v.replace(',', '.').toDoubleOrNull()?.takeIf { it in 0.0..100.0 }?.let { cfg.copy(packPrice = it) }
                     }
                 }
             }
             item {
-                Row(Icons.Rounded.Inventory2, MaterialShapes.Square, "Cigarettes par paquet", "${c.cigsPerPack}", Modifier.cascade(2)) {
-                    edit = Edit.Number("Cigarettes par paquet", c.cigsPerPack.toString(), false) { cfg, v -> v.toIntOrNull()?.takeIf { it in 1..50 }?.let { cfg.copy(cigsPerPack = it) } }
+                Row(Icons.Rounded.Inventory2, MaterialShapes.Square, stringResource(R.string.settings_cigarettes_par_paquet), "${c.cigsPerPack}", Modifier.cascade(2)) {
+                    edit = Edit.Number(str(R.string.settings_cigarettes_par_paquet), c.cigsPerPack.toString(), false) { cfg, v -> v.toIntOrNull()?.takeIf { it in 1..50 }?.let { cfg.copy(cigsPerPack = it) } }
                 }
             }
-            item { Row(Icons.Rounded.Route, MaterialShapes.Pill, "Mon plan", "Date, paliers, ajustements", Modifier.cascade(3), onClick = nav::plan) }
+            item { Row(Icons.Rounded.Route, MaterialShapes.Pill, stringResource(R.string.settings_mon_plan), stringResource(R.string.settings_date_paliers_ajustements), Modifier.cascade(3), onClick = nav::plan) }
             item {
                 val count = c.reasons.lines().count { it.isNotBlank() }
-                Row(Icons.Rounded.Favorite, MaterialShapes.Heart, "Mes raisons d'arrêter", if (count == 0) "Rappelées dans le SOS et les notifications" else "$count raison${if (count > 1) "s" else ""}") { reasonsEdit = true }
+                Row(Icons.Rounded.Favorite, MaterialShapes.Heart, stringResource(R.string.settings_mes_raisons_d_arreter), if (count == 0) stringResource(R.string.settings_rappelees_dans_le_sos_et) else stringResource(R.string.settings_raison, count, if (count > 1) "s" else "")) { reasonsEdit = true }
             }
 
-            item { SectionTitle("Ma journée") }
+            item { SectionTitle(stringResource(R.string.settings_ma_journee)) }
             item {
-                Row(Icons.Rounded.WbSunny, MaterialShapes.Sunny, "Réveil", hm(c.wakeMinutes), Modifier.cascade(4)) {
-                    edit = Edit.Time("Heure de réveil", c.wakeMinutes) { cfg, m -> cfg.copy(wakeMinutes = m) }
+                Row(Icons.Rounded.WbSunny, MaterialShapes.Sunny, stringResource(R.string.settings_reveil), hm(c.wakeMinutes), Modifier.cascade(4)) {
+                    edit = Edit.Time(str(R.string.settings_heure_de_reveil), c.wakeMinutes) { cfg, m -> cfg.copy(wakeMinutes = m) }
                 }
             }
             item {
-                Row(Icons.Rounded.Bedtime, MaterialShapes.Arch, "Coucher", "${hm(c.sleepMinutes)} · pas de notification la nuit", Modifier.cascade(5)) {
-                    edit = Edit.Time("Heure de coucher", c.sleepMinutes) { cfg, m -> cfg.copy(sleepMinutes = m) }
+                Row(Icons.Rounded.Bedtime, MaterialShapes.Arch, stringResource(R.string.settings_coucher), stringResource(R.string.settings_pas_de_notification_la_nuit, hm(c.sleepMinutes)), Modifier.cascade(5)) {
+                    edit = Edit.Time(str(R.string.settings_heure_de_coucher), c.sleepMinutes) { cfg, m -> cfg.copy(sleepMinutes = m) }
                 }
             }
 
@@ -179,107 +182,107 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     var delay by remember(c.morningDelayMinutes) { mutableFloatStateOf(c.morningDelayMinutes.toFloat()) }
                     Text(
-                        if (delay < 1f) "Première du matin : pas d'objectif" else "Première du matin : au moins ${com.karelisio.exit.domain.PlanEngine.formatDuration(delay.roundToInt())} après le réveil",
+                        if (delay < 1f) stringResource(R.string.settings_premiere_du_matin_pas_d) else stringResource(R.string.settings_premiere_du_matin_au_moins, com.karelisio.exit.domain.PlanEngine.formatDuration(delay.roundToInt())),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Slider(delay, { delay = (it / 15f).roundToInt() * 15f }, valueRange = 0f..240f, steps = 15, onValueChangeFinished = {
                         vm.updateConfig { it.copy(morningDelayMinutes = delay.roundToInt()) }
                     })
                     Text(
-                        "Retarder la première cigarette est l'un des meilleurs signes de baisse de la dépendance. Augmente petit à petit.",
+                        stringResource(R.string.settings_retarder_la_premiere_cigarette_est),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
 
-            item { SectionTitle("Respiration SOS") }
+            item { SectionTitle(stringResource(R.string.settings_respiration_sos)) }
             item {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).cascade(6)) {
                     var inhale by remember(c.breathInhaleSeconds) { mutableFloatStateOf(c.breathInhaleSeconds) }
                     var exhale by remember(c.breathExhaleSeconds) { mutableFloatStateOf(c.breathExhaleSeconds) }
-                    Text("Inspiration : ${inhale.roundToInt()} s", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.settings_inspiration_s, inhale.roundToInt()), style = MaterialTheme.typography.bodyLarge)
                     Slider(inhale, { inhale = it.roundToInt().toFloat() }, valueRange = 3f..8f, steps = 4, onValueChangeFinished = {
                         vm.updateConfig { it.copy(breathInhaleSeconds = inhale) }
                     })
-                    Text("Expiration : ${exhale.roundToInt()} s", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.settings_expiration_s, exhale.roundToInt()), style = MaterialTheme.typography.bodyLarge)
                     Slider(exhale, { exhale = it.roundToInt().toFloat() }, valueRange = 3f..10f, steps = 6, onValueChangeFinished = {
                         vm.updateConfig { it.copy(breathExhaleSeconds = exhale) }
                     })
                     Text(
-                        "5 s / 5 s = cohérence cardiaque (6 respirations par minute).",
+                        stringResource(R.string.settings_5_s_5_s_coherence),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             item {
-                Toggle(Icons.Rounded.Vibration, MaterialShapes.Flower, "Vibrations douces", "À chaque inspiration et expiration", c.breathHaptics) { on ->
+                Toggle(Icons.Rounded.Vibration, MaterialShapes.Flower, stringResource(R.string.settings_vibrations_douces), stringResource(R.string.settings_a_chaque_inspiration_et_expiration), c.breathHaptics) { on ->
                     vm.updateConfig { it.copy(breathHaptics = on) }
                 }
             }
 
-            item { SectionTitle("Notifications") }
+            item { SectionTitle(stringResource(R.string.settings_notifications)) }
             item {
-                Toggle(Icons.Rounded.Notifications, MaterialShapes.Cookie9Sided, "Prochaine autorisée", "À l'heure exacte où l'intervalle est écoulé", c.notifyNextAllowed) { on ->
+                Toggle(Icons.Rounded.Notifications, MaterialShapes.Cookie9Sided, stringResource(R.string.settings_prochaine_autorisee), stringResource(R.string.settings_a_l_heure_exacte_ou), c.notifyNextAllowed) { on ->
                     vm.updateConfig { it.copy(notifyNextAllowed = on) }
                 }
             }
             item {
-                Toggle(Icons.Rounded.EmojiEvents, MaterialShapes.SoftBurst, "Jalons santé", "Pendant l'arrêt complet", c.notifyMilestones) { on ->
+                Toggle(Icons.Rounded.EmojiEvents, MaterialShapes.SoftBurst, stringResource(R.string.progress_jalons_sante), stringResource(R.string.settings_pendant_l_arret_complet), c.notifyMilestones) { on ->
                     vm.updateConfig { it.copy(notifyMilestones = on) }
                 }
             }
-            item { Row(Icons.Rounded.Security, MaterialShapes.Gem, "Autorisations", "Notifications, alarmes, batterie, mises à jour", onClick = nav::permissions) }
+            item { Row(Icons.Rounded.Security, MaterialShapes.Gem, stringResource(R.string.settings_autorisations), stringResource(R.string.settings_notifications_alarmes_batterie_mises_a), onClick = nav::permissions) }
 
-            item { SectionTitle("Apparence") }
+            item { SectionTitle(stringResource(R.string.settings_apparence)) }
             item {
-                Toggle(Icons.Rounded.Palette, MaterialShapes.Puffy, "Couleurs du fond d'écran", "Sinon : vert menthe et bleu air frais", c.dynamicColor) { on ->
+                Toggle(Icons.Rounded.Palette, MaterialShapes.Puffy, stringResource(R.string.settings_couleurs_du_fond_d_ecran), stringResource(R.string.settings_sinon_vert_menthe_et_bleu), c.dynamicColor) { on ->
                     vm.updateConfig { it.copy(dynamicColor = on) }
                 }
             }
 
-            item { SectionTitle("Sauvegarde locale") }
+            item { SectionTitle(stringResource(R.string.settings_sauvegarde_locale)) }
             item {
                 val last = c.lastAutoBackupAt
                 Row(
                     Icons.Rounded.Backup,
                     MaterialShapes.Cookie6Sided,
-                    "Sauvegarde automatique",
+                    stringResource(R.string.settings_sauvegarde_automatique),
                     when {
-                        c.autoBackupUri == null -> "Désactivée · choisis un dossier (ex. Drive, carte SD)"
-                        last == null -> "Quotidienne · pas encore faite"
-                        else -> "Quotidienne · dernière le ${com.karelisio.exit.ui.components.Fmt.dayLabel(com.karelisio.exit.domain.PlanEngine.day(last, java.time.ZoneId.systemDefault()))} à ${com.karelisio.exit.ui.components.Fmt.time(last)}"
+                        c.autoBackupUri == null -> stringResource(R.string.settings_desactivee_choisis_un_dossier_ex)
+                        last == null -> stringResource(R.string.settings_quotidienne_pas_encore_faite)
+                        else -> stringResource(R.string.settings_quotidienne_derniere_le_a, com.karelisio.exit.ui.components.Fmt.dayLabel(com.karelisio.exit.domain.PlanEngine.day(last, java.time.ZoneId.systemDefault())), com.karelisio.exit.ui.components.Fmt.time(last))
                     },
                 ) { if (c.autoBackupUri == null) folderPicker.launch(null) else backupMenu = true }
             }
             item {
-                Row(Icons.Rounded.Download, MaterialShapes.Bun, "Exporter en JSON", "Toutes tes données dans un fichier") {
+                Row(Icons.Rounded.Download, MaterialShapes.Bun, stringResource(R.string.settings_exporter_en_json), stringResource(R.string.settings_toutes_tes_donnees_dans_un)) {
                     exporter.launch("exit-sauvegarde-${LocalDate.now().format(DateTimeFormatter.ISO_DATE)}.json")
                 }
             }
             item {
-                Row(Icons.Rounded.Upload, MaterialShapes.Bun, "Importer un JSON", "Remplace les données actuelles") {
+                Row(Icons.Rounded.Upload, MaterialShapes.Bun, stringResource(R.string.settings_importer_un_json), stringResource(R.string.settings_remplace_les_donnees_actuelles)) {
                     importer.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                 }
             }
 
-            item { SectionTitle("Application") }
+            item { SectionTitle(stringResource(R.string.settings_application)) }
             item {
                 val status = when (update) {
-                    UpdateState.Checking -> "Recherche…"
-                    UpdateState.UpToDate -> "À jour"
-                    UpdateState.CheckFailed -> "Vérification impossible (réseau ?)"
-                    is UpdateState.Available -> "Nouvelle version disponible"
-                    is UpdateState.Downloading -> "Téléchargement…"
-                    is UpdateState.Installing -> "Installation…"
-                    is UpdateState.Failed -> "Échec de la mise à jour"
-                    UpdateState.Idle -> "Touche pour vérifier"
+                    UpdateState.Checking -> stringResource(R.string.settings_recherche)
+                    UpdateState.UpToDate -> stringResource(R.string.settings_a_jour)
+                    UpdateState.CheckFailed -> stringResource(R.string.settings_verification_impossible_reseau)
+                    is UpdateState.Available -> stringResource(R.string.update_nouvelle_version_disponible)
+                    is UpdateState.Downloading -> stringResource(R.string.settings_telechargement)
+                    is UpdateState.Installing -> stringResource(R.string.settings_installation)
+                    is UpdateState.Failed -> stringResource(R.string.settings_echec_de_la_mise_a)
+                    UpdateState.Idle -> stringResource(R.string.settings_touche_pour_verifier)
                 }
-                Row(Icons.Rounded.SystemUpdate, MaterialShapes.Cookie7Sided, "Version ${BuildConfig.VERSION_NAME}", status) { vm.updates.checkNow() }
+                Row(Icons.Rounded.SystemUpdate, MaterialShapes.Cookie7Sided, stringResource(R.string.settings_version, BuildConfig.VERSION_NAME), status) { vm.updates.checkNow() }
             }
-            item { Row(Icons.Rounded.Info, MaterialShapes.Circle, "Sources et aide", "Tabac info service, OMS, 39 89", onClick = nav::sources) }
-            item { Row(Icons.Rounded.Air, MaterialShapes.Clover8Leaf, "Exit", "100 % local : aucun compte, aucun serveur, aucune publicité") {} }
+            item { Row(Icons.Rounded.Info, MaterialShapes.Circle, stringResource(R.string.settings_sources_et_aide), stringResource(R.string.settings_tabac_info_service_oms_39), onClick = nav::sources) }
+            item { Row(Icons.Rounded.Air, MaterialShapes.Clover8Leaf, stringResource(R.string.settings_exit), "100 % local : aucun compte, aucun serveur, aucune publicité") {} }
         }
     }
 
@@ -301,40 +304,40 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
         var text by remember { mutableStateOf(c.reasons) }
         AlertDialog(
             onDismissRequest = { reasonsEdit = false },
-            title = { Text("Mes raisons d'arrêter") },
+            title = { Text(stringResource(R.string.settings_mes_raisons_d_arreter)) },
             text = {
-                OutlinedTextField(text, { text = it.take(500) }, label = { Text("Une raison par ligne") }, minLines = 4)
+                OutlinedTextField(text, { text = it.take(500) }, label = { Text(stringResource(R.string.settings_une_raison_par_ligne)) }, minLines = 4)
             },
             confirmButton = {
                 TextButton(onClick = {
                     vm.updateConfig { it.copy(reasons = text.trim()) }
                     reasonsEdit = false
-                }) { Text("OK") }
+                }) { Text(stringResource(android.R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { reasonsEdit = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { reasonsEdit = false }) { Text(stringResource(R.string.history_annuler)) } },
         )
     }
     if (backupMenu) {
         AlertDialog(
             onDismissRequest = { backupMenu = false },
-            title = { Text("Sauvegarde automatique") },
-            text = { Text("Chaque jour, Exit enregistre « ${com.karelisio.exit.data.AutoBackup.FILE_NAME} » dans le dossier choisi. Pour restaurer : Importer un JSON.") },
+            title = { Text(stringResource(R.string.settings_sauvegarde_automatique)) },
+            text = { Text(stringResource(R.string.settings_chaque_jour_exit_enregistre_dans, com.karelisio.exit.data.AutoBackup.FILE_NAME)) },
             confirmButton = {
                 TextButton(onClick = {
                     vm.backupNow()
                     backupMenu = false
-                }) { Text("Sauvegarder maintenant") }
+                }) { Text(stringResource(R.string.settings_sauvegarder_maintenant)) }
             },
             dismissButton = {
                 Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
                     TextButton(onClick = {
                         backupMenu = false
                         folderPicker.launch(null)
-                    }) { Text("Changer de dossier") }
+                    }) { Text(stringResource(R.string.settings_changer_de_dossier)) }
                     TextButton(onClick = {
                         vm.setAutoBackupFolder(null)
                         backupMenu = false
-                    }) { Text("Désactiver") }
+                    }) { Text(stringResource(R.string.settings_desactiver)) }
                 }
             },
         )
@@ -342,15 +345,15 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
     pendingImport?.let { text ->
         AlertDialog(
             onDismissRequest = { pendingImport = null },
-            title = { Text("Restaurer cette sauvegarde ?") },
-            text = { Text("Les données actuelles (historique, envies, plan) seront remplacées par celles du fichier.") },
+            title = { Text(stringResource(R.string.settings_restaurer_cette_sauvegarde)) },
+            text = { Text(stringResource(R.string.settings_les_donnees_actuelles_historique_envies)) },
             confirmButton = {
                 Button(onClick = {
                     vm.importJson(text)
                     pendingImport = null
-                }) { Text("Restaurer") }
+                }) { Text(stringResource(R.string.settings_restaurer)) }
             },
-            dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { pendingImport = null }) { Text(stringResource(R.string.history_annuler)) } },
         )
     }
 }
@@ -405,8 +408,8 @@ private fun NumberDialog(edit: Edit.Number, onDismiss: () -> Unit, onConfirm: (S
                 Spacer(Modifier.height(4.dp))
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(value) }) { Text("OK") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        confirmButton = { TextButton(onClick = { onConfirm(value) }) { Text(stringResource(android.R.string.ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.history_annuler)) } },
     )
 }
 
@@ -417,7 +420,7 @@ private fun TimeDialog(title: String, minutes: Int, onDismiss: () -> Unit, onCon
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { TimePicker(state) },
-        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("OK") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
+        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text(stringResource(android.R.string.ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.history_annuler)) } },
     )
 }

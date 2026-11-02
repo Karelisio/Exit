@@ -1,5 +1,13 @@
 package com.karelisio.exit.ui.history
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -93,12 +101,12 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
-        topBar = { ExitTopBar("Historique", scroll) },
+        topBar = { ExitTopBar(stringResource(R.string.history_historique), scroll) },
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (tab == 0) {
-                    SmallFloatingActionButton(onClick = { adding = true }) { Icon(Icons.Rounded.Add, contentDescription = "Ajouter un oubli") }
+                    SmallFloatingActionButton(onClick = { adding = true }) { Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.history_ajouter_un_oubli)) }
                 }
                 SosFab(nav::sos)
             }
@@ -110,7 +118,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
         ) {
             item(key = "tabs") {
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    listOf("Cigarettes · ${d.smokes.size}", "Envies · ${d.cravings.size}").forEachIndexed { i, label ->
+                    listOf(stringResource(R.string.history_cigarettes, d.smokes.size), stringResource(R.string.history_envies, d.cravings.size)).forEachIndexed { i, label ->
                         SegmentedButton(
                             selected = tab == i,
                             onClick = {
@@ -123,15 +131,15 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                 }
             }
             if (tab == 0) {
-                if (d.smokes.isEmpty()) item(key = "empty0") { Empty("Aucune cigarette notée pour l'instant.\nLe bouton « J'en fume une » est sur l'accueil et sur le widget.") }
+                if (d.smokes.isEmpty()) item(key = "empty0") { Empty(stringResource(R.string.history_aucune_cigarette_notee_pour_l)) }
                 smokesByDay.forEach { (day, smokes) ->
-                    item(key = "h-s-$day") { DayHeader(Fmt.dayLabel(day, today), "${smokes.size} cigarette${if (smokes.size > 1) "s" else ""}", Modifier.animateItem()) }
+                    item(key = "h-s-$day") { DayHeader(Fmt.dayLabel(day, today), stringResource(R.string.history_cigarette, smokes.size, if (smokes.size > 1) "s" else ""), Modifier.animateItem()) }
                     items(smokes, key = { "s-${it.id}" }) { smoke ->
                         Dismissable(
                             onDelete = {
                                 vm.deleteSmoke(smoke)
                                 scope.launch {
-                                    val r = snackbar.showSnackbar("Cigarette supprimée", actionLabel = "Annuler", withDismissAction = true)
+                                    val r = snackbar.showSnackbar(str(R.string.history_cigarette_supprimee), actionLabel = str(R.string.history_annuler), withDismissAction = true)
                                     if (r == SnackbarResult.ActionPerformed) vm.restoreSmoke(smoke)
                                 }
                             },
@@ -140,7 +148,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                             SmokeRow(smoke, onClick = { editing = smoke }, onDelete = {
                                 vm.deleteSmoke(smoke)
                                 scope.launch {
-                                    val r = snackbar.showSnackbar("Cigarette supprimée", actionLabel = "Annuler", withDismissAction = true)
+                                    val r = snackbar.showSnackbar(str(R.string.history_cigarette_supprimee), actionLabel = str(R.string.history_annuler), withDismissAction = true)
                                     if (r == SnackbarResult.ActionPerformed) vm.restoreSmoke(smoke)
                                 }
                             })
@@ -148,15 +156,15 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                     }
                 }
             } else {
-                if (d.cravings.isEmpty()) item(key = "empty1") { Empty("Pas encore d'envie notée.\nAu prochain coup dur, ouvre le mode SOS : il t'accompagne 5 minutes.") }
+                if (d.cravings.isEmpty()) item(key = "empty1") { Empty(stringResource(R.string.history_pas_encore_d_envie_notee)) }
                 cravingsByDay.forEach { (day, cravings) ->
                     val won = cravings.count { it.overcome }
-                    item(key = "h-c-$day") { DayHeader(Fmt.dayLabel(day, today), "$won / ${cravings.size} surmontée${if (won > 1) "s" else ""}", Modifier.animateItem()) }
+                    item(key = "h-c-$day") { DayHeader(Fmt.dayLabel(day, today), stringResource(R.string.history_surmontee, won, cravings.size, if (won > 1) "s" else ""), Modifier.animateItem()) }
                     items(cravings, key = { "c-${it.id}" }) { craving ->
                         Dismissable(
                             onDelete = {
                                 vm.deleteCraving(craving)
-                                scope.launch { snackbar.showSnackbar("Envie supprimée") }
+                                scope.launch { snackbar.showSnackbar(str(R.string.history_envie_supprimee)) }
                             },
                             modifier = Modifier.animateItem(),
                         ) {
@@ -175,7 +183,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
             onSave = { at, trigger, note ->
                 vm.logSmoke(at, trigger, note)
                 adding = false
-                vm.message("Cigarette ajoutée à ${Fmt.time(at)}")
+                vm.message(str(R.string.history_cigarette_ajoutee_a, Fmt.time(at)))
             },
         )
     }
@@ -233,7 +241,7 @@ private fun Dismissable(onDelete: () -> Unit, modifier: Modifier = Modifier, con
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 24.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Supprimer", tint = MaterialTheme.colorScheme.onErrorContainer)
+                Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.history_supprimer), tint = MaterialTheme.colorScheme.onErrorContainer)
             }
         },
     ) { content() }
@@ -246,9 +254,9 @@ private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit, onDelete: () -> Un
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Modifier", onClick = onClick)
+            .clickable(onClickLabel = stringResource(R.string.history_modifier), onClick = onClick)
             // Alternative au glisser pour supprimer (TalkBack, accès par contacteur).
-            .semantics(mergeDescendants = true) { customActions = listOf(CustomAccessibilityAction("Supprimer") { onDelete(); true }) },
+            .semantics(mergeDescendants = true) { customActions = listOf(CustomAccessibilityAction(str(R.string.history_supprimer)) { onDelete(); true }) },
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ShapeIcon(
@@ -264,13 +272,13 @@ private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit, onDelete: () -> Un
                 val context = when {
                     trigger == Trigger.PERSO && !smoke.note.isNullOrBlank() -> "${trigger.emoji}  ${smoke.note}"
                     trigger != null -> "${trigger.emoji}  ${trigger.label}"
-                    else -> "Sans contexte · touche pour en ajouter"
+                    else -> stringResource(R.string.history_sans_contexte_touche_pour_en)
                 }
                 Text(context, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             when {
-                smoke.slip -> Tag("écart", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
-                smoke.early -> Tag("en avance", MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant)
+                smoke.slip -> Tag(stringResource(R.string.history_ecart), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                smoke.early -> Tag(stringResource(R.string.history_en_avance), MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -282,7 +290,7 @@ private fun CravingRow(craving: CravingEntity, onDelete: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
-            customActions = listOf(CustomAccessibilityAction("Supprimer") { onDelete(); true })
+            customActions = listOf(CustomAccessibilityAction(str(R.string.history_supprimer)) { onDelete(); true })
         },
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -296,11 +304,11 @@ private fun CravingRow(craving: CravingEntity, onDelete: () -> Unit) {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    "${Fmt.time(craving.timestamp)} · ${if (craving.overcome) "surmontée" else "pas cette fois"}",
+                    stringResource(if (craving.overcome) R.string.history_craving_overcome else R.string.history_craving_not, Fmt.time(craving.timestamp)),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 val parts = listOfNotNull(
-                    if (craving.durationSeconds > 0) "${craving.durationSeconds / 60} min ${craving.durationSeconds % 60} s" else null,
+                    if (craving.durationSeconds > 0) stringResource(R.string.history_min_s, craving.durationSeconds / 60, craving.durationSeconds % 60) else null,
                     trigger?.let { if (it == Trigger.PERSO && !craving.note.isNullOrBlank()) "${it.emoji} ${craving.note}" else "${it.emoji} ${it.label}" },
                 )
                 if (parts.isNotEmpty()) Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -10,6 +10,7 @@ class ExitApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        AppStrings.resources = resources
         container = AppContainer(this)
         container.notifications.createChannels()
         runCatching { DailyWorker.schedule(this) }

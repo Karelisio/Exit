@@ -23,9 +23,9 @@ import kotlinx.serialization.Serializable
 @Serializable data object SourcesRoute
 @Serializable data object ReviewRoute
 
-enum class TopLevel(val route: Any, val label: String, val icon: ImageVector, val selectedIcon: ImageVector) {
-    HOME(HomeRoute, "Accueil", Icons.Outlined.Home, Icons.Rounded.Home),
-    HISTORY(HistoryRoute, "Historique", Icons.Outlined.History, Icons.Rounded.History),
-    PROGRESS(ProgressRoute, "Progrès", Icons.Outlined.EmojiEvents, Icons.Rounded.EmojiEvents),
-    STATS(StatsRoute, "Stats", Icons.Outlined.BarChart, Icons.Rounded.BarChart),
+enum class TopLevel(val route: Any, @androidx.annotation.StringRes val labelRes: Int, val icon: ImageVector, val selectedIcon: ImageVector) {
+    HOME(HomeRoute, com.karelisio.exit.R.string.nav_home, Icons.Outlined.Home, Icons.Rounded.Home),
+    HISTORY(HistoryRoute, com.karelisio.exit.R.string.nav_history, Icons.Outlined.History, Icons.Rounded.History),
+    PROGRESS(ProgressRoute, com.karelisio.exit.R.string.nav_progress, Icons.Outlined.EmojiEvents, Icons.Rounded.EmojiEvents),
+    STATS(StatsRoute, com.karelisio.exit.R.string.nav_stats, Icons.Outlined.BarChart, Icons.Rounded.BarChart),
 }

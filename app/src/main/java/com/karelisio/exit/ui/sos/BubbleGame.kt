@@ -1,5 +1,8 @@
 package com.karelisio.exit.ui.sos
 
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -62,7 +65,7 @@ fun BubbleGame(modifier: Modifier = Modifier) {
 
     val scheme = MaterialTheme.colorScheme
     Surface(
-        modifier.semantics { contentDescription = "Mini-jeu : éclate les bouffées de fumée. $score éclatées." },
+        modifier.semantics { contentDescription = str(R.string.sos_mini_jeu_eclate_les_bouffees, score) },
         shape = MaterialTheme.shapes.large,
         color = scheme.surfaceContainerHigh,
     ) {
@@ -111,7 +114,7 @@ fun BubbleGame(modifier: Modifier = Modifier) {
                 }
             }
             Text(
-                if (score == 0) "Éclate les bouffées de fumée" else "$score éclatée${if (score > 1) "s" else ""}",
+                if (score == 0) stringResource(R.string.sos_eclate_les_bouffees_de_fumee) else stringResource(R.string.sos_eclatee, score, if (score > 1) "s" else ""),
                 style = MaterialTheme.typography.labelLarge,
                 color = scheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),

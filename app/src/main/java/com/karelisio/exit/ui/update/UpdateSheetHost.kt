@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.update
 
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -91,13 +93,13 @@ fun UpdateSheetHost(updates: UpdateManager) {
                 )
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    Text("Exit ${offer.version}", style = MaterialTheme.typography.headlineSmall)
-                    Text("Nouvelle version disponible", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.update_exit, offer.version), style = MaterialTheme.typography.headlineSmall)
+                    Text(stringResource(R.string.update_nouvelle_version_disponible), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(Modifier.height(16.dp))
             Column(Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
-                Changelog(offer.changelog.ifBlank { "Améliorations et corrections." })
+                Changelog(offer.changelog.ifBlank { stringResource(R.string.update_ameliorations_et_corrections) })
             }
             Spacer(Modifier.height(20.dp))
             AnimatedContent(
@@ -113,29 +115,29 @@ fun UpdateSheetHost(updates: UpdateManager) {
                             LinearWavyProgressIndicator(progress = { p }, modifier = Modifier.fillMaxWidth())
                             Spacer(Modifier.height(8.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Téléchargement… ${(p * 100).toInt()} %", style = MaterialTheme.typography.bodyLarge)
-                                TextButton(onClick = updates::cancelDownload) { Text("Annuler") }
+                                Text(stringResource(R.string.update_downloading_percent, (p * 100).toInt()), style = MaterialTheme.typography.bodyLarge)
+                                TextButton(onClick = updates::cancelDownload) { Text(stringResource(R.string.history_annuler)) }
                             }
                         }
                     }
                     is UpdateState.Installing -> Row(verticalAlignment = Alignment.CenterVertically) {
                         LoadingIndicator(Modifier.size(48.dp))
                         Spacer(Modifier.width(12.dp))
-                        Text("Installation… confirme dans la fenêtre d'Android.", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.update_installation_confirme_dans_la_fenetre), style = MaterialTheme.typography.bodyLarge)
                     }
                     is UpdateState.Failed -> Column {
                         Text(s.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(12.dp))
-                        Button(onClick = { updates.install(s.info) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Réessayer") }
+                        Button(onClick = { updates.install(s.info) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.update_reessayer)) }
                     }
                     else -> Column {
                         if (canInstall) {
                             Button(onClick = { updates.install(offer) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                                Text("Mettre à jour")
+                                Text(stringResource(R.string.update_mettre_a_jour))
                             }
                         } else {
                             Text(
-                                "Autorise Exit à installer des applis pour faire la mise à jour en un geste.",
+                                stringResource(R.string.update_autorise_exit_a_installer_des),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -144,7 +146,7 @@ fun UpdateSheetHost(updates: UpdateManager) {
                                 onClick = { Permissions.openSettings(context, ExitPermission.INSTALL) },
                                 shapes = ButtonDefaults.shapes(),
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                            ) { Text("Autoriser l'installation") }
+                            ) { Text(stringResource(R.string.update_autoriser_l_installation)) }
                         }
                         TextButton(
                             onClick = {
@@ -152,7 +154,7 @@ fun UpdateSheetHost(updates: UpdateManager) {
                                 hidden = offer.version
                             },
                             modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Plus tard") }
+                        ) { Text(stringResource(R.string.update_plus_tard)) }
                     }
                 }
             }

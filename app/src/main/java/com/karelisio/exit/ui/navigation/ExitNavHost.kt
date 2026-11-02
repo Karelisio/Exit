@@ -136,7 +136,7 @@ fun ExitNavHost(vm: AppViewModel, pendingDestination: String?, onDestinationHand
                                         navigator.tab(item)
                                     },
                                     icon = { Icon(if (selected) item.selectedIcon else item.icon, contentDescription = null) },
-                                    label = { Text(item.label) },
+                                    label = { Text(androidx.compose.ui.res.stringResource(item.labelRes)) },
                                 )
                             }
                         }
