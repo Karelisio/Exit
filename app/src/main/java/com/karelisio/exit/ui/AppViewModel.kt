@@ -11,6 +11,8 @@ import com.karelisio.exit.data.SmokeLogged
 import com.karelisio.exit.domain.StepPeriod
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +32,6 @@ data class AppData(
 }
 
 sealed interface UiEvent {
-    data class Smoked(val logged: SmokeLogged) : UiEvent
     data class Message(val text: String) : UiEvent
 }
 
@@ -45,6 +46,28 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 8)
     val events: SharedFlow<UiEvent> = _events.asSharedFlow()
 
+    private val _lastLogged = MutableStateFlow<SmokeLogged?>(null)
+
+    /** Dernière cigarette notée depuis l'appli (carte de confirmation et contexte sur l'accueil). */
+    val lastLogged: StateFlow<SmokeLogged?> = _lastLogged.asStateFlow()
+
+    private val _pendingSlip = MutableStateFlow<SmokeLogged?>(null)
+
+    /** Écart pendant l'arrêt, en attente de la feuille bienveillante sur l'accueil. */
+    val pendingSlip: StateFlow<SmokeLogged?> = _pendingSlip.asStateFlow()
+
+    fun clearLogged() {
+        _lastLogged.value = null
+    }
+
+    fun clearSlip() {
+        _pendingSlip.value = null
+    }
+
+    private fun onLogged(logged: SmokeLogged) {
+        if (logged.smoke.slip) _pendingSlip.value = logged else _lastLogged.value = logged
+    }
+
     val updates get() = container.updates
 
     fun completeOnboarding(cigsPerDay: Int, packPrice: Double, cigsPerPack: Int, quitDay: LocalDate?, step: StepPeriod, stepMinutes: Int) =
@@ -53,7 +76,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun logSmoke(at: Long? = null, trigger: String? = null, note: String? = null) = viewModelScope.launch {
         container.notifications.cancelNextAllowed()
         val logged = if (at == null) repo.logSmoke(trigger = trigger, note = note) else repo.logSmoke(at, trigger, note)
-        _events.emit(UiEvent.Smoked(logged))
+        if (at == null) onLogged(logged)
     }
 
     fun setSmokeContext(id: Long, trigger: String?, note: String?) = viewModelScope.launch { repo.setSmokeContext(id, trigger, note) }
@@ -64,7 +87,7 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun logCraving(overcome: Boolean, trigger: String?, note: String?, seconds: Int, alsoSmoke: Boolean = false) =
         viewModelScope.launch {
             repo.logCraving(overcome, trigger, note, seconds)
-            if (alsoSmoke) _events.emit(UiEvent.Smoked(repo.logSmoke(trigger = trigger, note = note)))
+            if (alsoSmoke) onLogged(repo.logSmoke(trigger = trigger, note = note))
         }
 
     fun deleteCraving(craving: CravingEntity) = viewModelScope.launch { repo.deleteCraving(craving) }

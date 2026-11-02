@@ -86,7 +86,6 @@ import com.karelisio.exit.domain.PlanSnapshot
 import com.karelisio.exit.domain.Trigger
 import com.karelisio.exit.ui.AppData
 import com.karelisio.exit.ui.AppViewModel
-import com.karelisio.exit.ui.UiEvent
 import com.karelisio.exit.ui.components.AnimatedCounter
 import com.karelisio.exit.ui.components.CountUpText
 import com.karelisio.exit.ui.components.ExitCard
@@ -126,19 +125,11 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
     val gains = remember(c, d.smokes, minute) { GainsCalculator.compute(c, d.smokes, now, zone) }
     val haptics = rememberHaptics()
 
-    var logged by remember { mutableStateOf<SmokeLogged?>(null) }
-    var slip by remember { mutableStateOf<SmokeLogged?>(null) }
+    val logged by vm.lastLogged.collectAsStateWithLifecycle()
+    val slip by vm.pendingSlip.collectAsStateWithLifecycle()
     var confirmQuit by remember { mutableStateOf(false) }
     var burst by remember { mutableIntStateOf(0) }
     var celebration by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        vm.events.collect { event ->
-            if (event is UiEvent.Smoked) {
-                if (event.logged.smoke.slip) slip = event.logged else logged = event.logged
-            }
-        }
-    }
 
     // Jalon santé atteint pendant l'arrêt : volute qui se dissipe + haptique, une seule fois par jalon.
     val streakStart = listOfNotNull(d.lastSmokeAt, c.quitStartedAt).maxOrNull()
@@ -197,7 +188,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                         }
                     }
                     item(key = "logged") {
-                        LoggedCard(logged, vm, onClose = { logged = null }, modifier = Modifier.animateItem())
+                        LoggedCard(logged, vm, onClose = vm::clearLogged, modifier = Modifier.animateItem())
                     }
                     if (snapshot.reachedZero) {
                         item(key = "ready") { ReadyToQuitCard(onQuit = { confirmQuit = true }, modifier = Modifier.cascade(2).animateItem()) }
@@ -284,7 +275,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
         }
     }
 
-    slip?.let { s -> SlipSheet(s, d, onDismiss = { slip = null }, vm = vm) }
+    slip?.let { s -> SlipSheet(s, d, onDismiss = vm::clearSlip, vm = vm) }
 
     if (confirmQuit) {
         AlertDialog(
