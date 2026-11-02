@@ -3,6 +3,12 @@
 Chaque section `## X.Y.Z` devient le texte de la release GitHub correspondante, affiché dans l'appli
 au moment de la mise à jour.
 
+## 1.3.0
+
+- Mode soirée : un budget de cigarettes fixé avant de sortir, compteur « 2 / 4 » sur l'accueil, le widget et la tuile.
+- Pendant la soirée : pas de minuteur, pas de notifications ni de rappels ; ces cigarettes ne font pas réajuster le plan.
+- Fin automatique à ton réveil (ou « Fin de soirée »), avec un bilan bienveillant le lendemain.
+
 ## 1.2.0
 
 - Plans d'urgence : une alternative par contexte (café, stress…), proposée dans le SOS et les rappels.

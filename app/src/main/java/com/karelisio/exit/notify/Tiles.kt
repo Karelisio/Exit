@@ -60,7 +60,10 @@ class SmokeTileService : TileService() {
                 val start = listOfNotNull(snapshot.lastSmokeAt, container.repository.config().quitStartedAt).maxOrNull() ?: now
                 str(R.string.notify_sans_fumer) to str(R.string.components_j, (now - start) / DAY_MS)
             } else {
-                str(R.string.home_j_en_fume_une) to (snapshot.nextAllowedAt?.takeIf { it > now }?.let { str(R.string.notify_prochaine_a, Fmt.time(it)) } ?: str(R.string.notify_c_est_ok_aujourd_hui, snapshot.todayCount))
+                val config = container.repository.config()
+                val party = config.partyStartedAt?.let { start -> container.repository.allSmokes().count { it.party && it.timestamp >= start } }
+                if (party != null) str(R.string.home_j_en_fume_une) to str(R.string.party_tile, party, config.partyBudget)
+                else str(R.string.home_j_en_fume_une) to (snapshot.nextAllowedAt?.takeIf { it > now }?.let { str(R.string.notify_prochaine_a, Fmt.time(it)) } ?: str(R.string.notify_c_est_ok_aujourd_hui, snapshot.todayCount))
             }
             withContext(Dispatchers.Main) {
                 val tile = qsTile ?: return@withContext

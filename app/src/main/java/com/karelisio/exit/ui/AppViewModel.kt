@@ -106,6 +106,10 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         _events.emit(UiEvent.Message(if (ok) str(R.string.ui_sauvegarde_enregistree) else str(R.string.ui_sauvegarde_impossible_choisis_a_nouveau)))
     }
 
+    fun startParty(budget: Int) = viewModelScope.launch { repo.startParty(budget) }
+    fun endParty() = viewModelScope.launch { repo.endParty() }
+    fun dismissPartySummary() = viewModelScope.launch { repo.dismissPartySummary() }
+
     fun saveCheckIn(checkIn: com.karelisio.exit.data.CheckInEntity) = viewModelScope.launch { repo.saveCheckIn(checkIn) }
     fun setTriggerPlan(trigger: String, plan: String) = viewModelScope.launch { repo.setTriggerPlan(trigger, plan) }
 

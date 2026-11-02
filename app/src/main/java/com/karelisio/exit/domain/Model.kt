@@ -23,7 +23,7 @@ enum class Trigger(@StringRes val labelRes: Int, val emoji: String) {
     }
 }
 
-enum class PlanEventType { START, AUTO_ADJUST, MANUAL_ADJUST, QUIT, SLIP, RESUME_PLAN, IMPORT }
+enum class PlanEventType { START, AUTO_ADJUST, MANUAL_ADJUST, QUIT, SLIP, RESUME_PLAN, IMPORT, PARTY }
 
 const val MINUTE_MS = 60_000L
 const val HOUR_MS = 60 * MINUTE_MS

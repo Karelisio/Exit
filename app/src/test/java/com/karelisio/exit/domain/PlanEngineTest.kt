@@ -115,6 +115,16 @@ class PlanEngineTest {
     }
 
     @Test
+    fun `soirée, fin automatique au réveil, au moins 4 h après le début`() {
+        val evening = start.atTime(21, 0).atZone(zone).toInstant().toEpochMilli()
+        val c = config().copy(partyStartedAt = evening)
+        assertEquals(start.plusDays(1).atTime(7, 0).atZone(zone).toInstant().toEpochMilli(), PlanEngine.partyEndAt(c, zone))
+        val lateNight = start.atTime(5, 0).atZone(zone).toInstant().toEpochMilli()
+        assertEquals(start.plusDays(1).atTime(7, 0).atZone(zone).toInstant().toEpochMilli(), PlanEngine.partyEndAt(config().copy(partyStartedAt = lateNight), zone))
+        assertNull(PlanEngine.partyEndAt(config(), zone))
+    }
+
+    @Test
     fun `pas de réajustement pendant l'arrêt`() {
         val c = config(quitInDays = 10).copy(phase = Phase.QUIT.name)
         val now = start.plusDays(8).atStartOfDay(zone).toInstant().toEpochMilli()

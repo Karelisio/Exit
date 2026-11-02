@@ -207,6 +207,18 @@ object PlanEngine {
         return PlanAdjustment(startOfDay(today, zone), newPerDay, quitEpochDay, interval, pushed)
     }
 
+    /** Fin automatique d'un mode soirée : le prochain réveil, au moins 4 h après le début. */
+    fun partyEndAt(c: ConfigEntity, zone: ZoneId): Long? {
+        val start = c.partyStartedAt ?: return null
+        var day = day(start, zone)
+        var end = startOfDay(day, zone) + c.wakeMinutes * MINUTE_MS
+        while (end < start + 4 * HOUR_MS) {
+            day = day.plusDays(1)
+            end = startOfDay(day, zone) + c.wakeMinutes * MINUTE_MS
+        }
+        return end
+    }
+
     fun formatDuration(minutes: Int): String {
         val h = minutes / 60
         val m = minutes % 60

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mode soirée. -->
+<resources>
+    <string name="party_button">Mode soirée 🎉</string>
+    <string name="party_dialog_title">Mode soirée</string>
+    <string name="party_dialog_text">Pas de minuteur ni de notifications ce soir. Fixe-toi un budget avant de sortir : ces cigarettes ne feront pas réajuster ton plan. Fin automatique à ton réveil.</string>
+    <string name="party_dialog_budget">Budget de la soirée</string>
+    <string name="party_dialog_start">C\'est parti</string>
+    <string name="party_title">Soirée en cours</string>
+    <string name="party_counter_label">cigarettes ce soir</string>
+    <string name="party_msg_ok">Profite de ta soirée. Un verre d\'eau entre deux verres, ça aide.</string>
+    <string name="party_msg_last">C\'est la dernière de ton budget. Tu peux aussi t\'arrêter là.</string>
+    <string name="party_msg_over">Budget dépassé, pas grave : tu peux encore t\'arrêter là. Demain, le plan reprend normalement.</string>
+    <string name="party_auto_end">Fin automatique vers %1$s</string>
+    <string name="party_end">Fin de soirée</string>
+    <string name="party_summary_title">Bilan de ta soirée</string>
+    <string name="party_summary_zero">Aucune cigarette pendant la soirée. Énorme 💪</string>
+    <string name="party_logged">Notée pour la soirée. Elle ne compte pas dans le réajustement du plan.</string>
+    <string name="party_tag">soirée</string>
+    <string name="party_widget_label">Soirée</string>
+    <string name="party_widget_counter">Budget de ce soir</string>
+    <string name="party_tile">Soirée : %1$d / %2$d</string>
+</resources>

@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -427,6 +428,7 @@ private fun EventRow(event: PlanEventEntity, modifier: Modifier = Modifier) {
         PlanEventType.QUIT -> Icons.Rounded.Flag to MaterialShapes.Sunny
         PlanEventType.SLIP -> Icons.Rounded.Favorite to MaterialShapes.Heart
         PlanEventType.RESUME_PLAN -> Icons.Rounded.Restore to MaterialShapes.Clover4Leaf
+        PlanEventType.PARTY -> Icons.Rounded.Celebration to MaterialShapes.SoftBurst
         PlanEventType.IMPORT, null -> Icons.Rounded.Upload to MaterialShapes.Pill
     }
     Row(modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {

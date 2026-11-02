@@ -76,6 +76,9 @@ internal data class WidgetState(
     val progress: Float,
     val streakStart: Long?,
     val now: Long,
+    /** Mode soirée : nombre fumé depuis le début et budget (null hors soirée). */
+    val partyCount: Int? = null,
+    val partyBudget: Int = 0,
 )
 
 internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: Long): WidgetState {
@@ -96,6 +99,8 @@ internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: 
         ok = snapshot.isOk(now),
         progress = snapshot.progress(now),
         streakStart = listOfNotNull(last, config.quitStartedAt).maxOrNull(),
+        partyCount = config.partyStartedAt?.let { start -> smokes.count { it.party && it.timestamp >= start } },
+        partyBudget = config.partyBudget,
         now = now,
     )
 }
@@ -187,6 +192,18 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
     val labelStyle = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp, textAlign = align)
     val valueSize = if (big) 30.sp else 22.sp
     val valueColor = GlanceTheme.colors.primary
+    state.partyCount?.let { count ->
+        Text(str(R.string.party_widget_label), style = labelStyle, maxLines = 1)
+        Text(
+            "$count / ${state.partyBudget}",
+            style = TextStyle(
+                color = if (count > state.partyBudget) GlanceTheme.colors.tertiary else valueColor,
+                fontSize = valueSize, fontWeight = FontWeight.Bold, textAlign = align,
+            ),
+            maxLines = 1,
+        )
+        return
+    }
     if (state.phase == Phase.QUIT) {
         Text(str(R.string.notify_sans_fumer), style = labelStyle, maxLines = 1)
         val start = state.streakStart
@@ -218,7 +235,9 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
 
 @Composable
 private fun Counter(state: WidgetState, center: Boolean = false) {
-    val text = if (state.phase == Phase.QUIT) {
+    val text = if (state.partyCount != null) {
+        str(R.string.party_widget_counter)
+    } else if (state.phase == Phase.QUIT) {
         str(R.string.widget_tiens_bon_tu_avances)
     } else {
         str(R.string.widget_aujourd_hui, state.todayCount) + if (state.target > 0) " / ${state.target}" else ""
@@ -249,7 +268,7 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
         actionRunCallback<LogSmokeAction>()
     }
     val description = if (quit) str(R.string.components_sos_envie) else str(R.string.home_j_en_fume_une)
-    val showRing = !quit && !state.ok
+    val showRing = !quit && !state.ok && state.partyCount == null
     val ringColor = GlanceTheme.colors.primary.getColor(context).toArgb()
     val trackColor = GlanceTheme.colors.surfaceVariant.getColor(context).toArgb()
     Box(contentAlignment = Alignment.Center) {

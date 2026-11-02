@@ -14,6 +14,7 @@ import com.karelisio.exit.domain.PlanEngine
 import com.karelisio.exit.domain.PlanEventType
 import com.karelisio.exit.domain.PlanSnapshot
 import com.karelisio.exit.domain.StepPeriod
+import com.karelisio.exit.domain.Trigger
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.ceil
@@ -117,6 +118,13 @@ class ExitRepository(
         val countToday = before.count { PlanEngine.day(it.timestamp, zone) == day }
         val next = PlanEngine.snapshot(c, previous, countToday, at, zone).nextAllowedAt
         val quit = PlanEngine.phase(c) == Phase.QUIT
+        val party = !quit && c.partyStartedAt != null && at >= c.partyStartedAt
+        if (party) {
+            val smoke = SmokeEntity(timestamp = at, trigger = trigger ?: Trigger.ALCOOL.name, note = note, party = true)
+            val id = db.smokes().insert(smoke)
+            changed()
+            return SmokeLogged(smoke.copy(id = id), 0)
+        }
         val early = !quit && next != null && at < next
         // Temps tenu au-delà de la fin du minuteur (les nuits ne comptent pas).
         val bonus = if (!quit && next != null && at > next && at - next < 6 * HOUR_MS) ((at - next) / MINUTE_MS).toInt() else 0
@@ -174,6 +182,39 @@ class ExitRepository(
         changed()
     }
 
+    // --- Mode soirée -----------------------------------------------------------------------------
+
+    /** Début de soirée : pas de minuteur ni de notifications, un budget assumé, hors réajustement du plan. */
+    suspend fun startParty(budget: Int) {
+        db.config().upsert(config().copy(partyStartedAt = clock(), partyBudget = budget.coerceIn(1, 40), partySummary = null))
+        changed()
+    }
+
+    /** Fin de soirée (manuelle ou au réveil) : bilan bienveillant, puis le plan reprend normalement. */
+    suspend fun endParty() {
+        val c = config()
+        val start = c.partyStartedAt ?: return
+        val count = db.smokes().since(start).count { it.party }
+        val summary = when {
+            count == 0 -> str(R.string.party_summary_zero)
+            count <= c.partyBudget -> plural(R.plurals.party_summary_ok, count, count, c.partyBudget)
+            else -> plural(R.plurals.party_summary_over, count, count, c.partyBudget)
+        }
+        db.config().upsert(c.copy(partyStartedAt = null, partySummary = summary))
+        event(PlanEventType.PARTY, summary)
+        changed()
+    }
+
+    /** Termine la soirée si l'heure de fin automatique est passée. */
+    suspend fun endPartyIfDue(now: Long = clock()) {
+        val end = PlanEngine.partyEndAt(config(), zone()) ?: return
+        if (now >= end) endParty()
+    }
+
+    suspend fun dismissPartySummary() {
+        db.config().upsert(config().copy(partySummary = null))
+    }
+
     // --- Point du jour (humeur, sevrage) -------------------------------------------------------
 
     suspend fun saveCheckIn(checkIn: CheckInEntity) {
@@ -198,7 +239,7 @@ class ExitRepository(
         val c = config()
         if (!c.onboardingDone) return null
         val zone = zone()
-        val perDay = db.smokes().since(now - 5 * DAY_MS).groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount()
+        val perDay = db.smokes().since(now - 5 * DAY_MS).filter { !it.party }.groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount()
         val adjustment = PlanEngine.driftAdjustment(c, { perDay[it] ?: 0 }, now, zone) ?: return null
         val message = buildString {
             append(str(R.string.adjust_message, adjustment.anchorPerDay.roundToInt(), PlanEngine.formatDuration(adjustment.intervalMinutes)))
