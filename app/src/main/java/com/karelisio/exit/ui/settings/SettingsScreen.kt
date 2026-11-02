@@ -17,6 +17,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Euro
@@ -106,6 +108,19 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             vm.message(if (ok) "Sauvegarde exportée" else "Export impossible")
         }
     }
+    var reasonsEdit by remember { mutableStateOf(false) }
+    var backupMenu by remember { mutableStateOf(false) }
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+            vm.setAutoBackupFolder(uri.toString())
+        }
+    }
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
             pendingImport = runCatching {
@@ -143,6 +158,10 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
                 }
             }
             item { Row(Icons.Rounded.Route, MaterialShapes.Pill, "Mon plan", "Date, paliers, ajustements", Modifier.cascade(3), onClick = nav::plan) }
+            item {
+                val count = c.reasons.lines().count { it.isNotBlank() }
+                Row(Icons.Rounded.Favorite, MaterialShapes.Heart, "Mes raisons d'arrêter", if (count == 0) "Rappelées dans le SOS et les notifications" else "$count raison${if (count > 1) "s" else ""}") { reasonsEdit = true }
+            }
 
             item { SectionTitle("Ma journée") }
             item {
@@ -153,6 +172,24 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             item {
                 Row(Icons.Rounded.Bedtime, MaterialShapes.Arch, "Coucher", "${hm(c.sleepMinutes)} · pas de notification la nuit", Modifier.cascade(5)) {
                     edit = Edit.Time("Heure de coucher", c.sleepMinutes) { cfg, m -> cfg.copy(sleepMinutes = m) }
+                }
+            }
+
+            item {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    var delay by remember(c.morningDelayMinutes) { mutableFloatStateOf(c.morningDelayMinutes.toFloat()) }
+                    Text(
+                        if (delay < 1f) "Première du matin : pas d'objectif" else "Première du matin : au moins ${com.karelisio.exit.domain.PlanEngine.formatDuration(delay.roundToInt())} après le réveil",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Slider(delay, { delay = (it / 15f).roundToInt() * 15f }, valueRange = 0f..240f, steps = 15, onValueChangeFinished = {
+                        vm.updateConfig { it.copy(morningDelayMinutes = delay.roundToInt()) }
+                    })
+                    Text(
+                        "Retarder la première cigarette est l'un des meilleurs signes de baisse de la dépendance. Augmente petit à petit.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -204,6 +241,19 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
 
             item { SectionTitle("Sauvegarde locale") }
             item {
+                val last = c.lastAutoBackupAt
+                Row(
+                    Icons.Rounded.Backup,
+                    MaterialShapes.Cookie6Sided,
+                    "Sauvegarde automatique",
+                    when {
+                        c.autoBackupUri == null -> "Désactivée · choisis un dossier (ex. Drive, carte SD)"
+                        last == null -> "Quotidienne · pas encore faite"
+                        else -> "Quotidienne · dernière le ${com.karelisio.exit.ui.components.Fmt.dayLabel(com.karelisio.exit.domain.PlanEngine.day(last, java.time.ZoneId.systemDefault()))} à ${com.karelisio.exit.ui.components.Fmt.time(last)}"
+                    },
+                ) { if (c.autoBackupUri == null) folderPicker.launch(null) else backupMenu = true }
+            }
+            item {
                 Row(Icons.Rounded.Download, MaterialShapes.Bun, "Exporter en JSON", "Toutes tes données dans un fichier") {
                     exporter.launch("exit-sauvegarde-${LocalDate.now().format(DateTimeFormatter.ISO_DATE)}.json")
                 }
@@ -246,6 +296,48 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             edit = null
         }
         null -> Unit
+    }
+    if (reasonsEdit) {
+        var text by remember { mutableStateOf(c.reasons) }
+        AlertDialog(
+            onDismissRequest = { reasonsEdit = false },
+            title = { Text("Mes raisons d'arrêter") },
+            text = {
+                OutlinedTextField(text, { text = it.take(500) }, label = { Text("Une raison par ligne") }, minLines = 4)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.updateConfig { it.copy(reasons = text.trim()) }
+                    reasonsEdit = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { reasonsEdit = false }) { Text("Annuler") } },
+        )
+    }
+    if (backupMenu) {
+        AlertDialog(
+            onDismissRequest = { backupMenu = false },
+            title = { Text("Sauvegarde automatique") },
+            text = { Text("Chaque jour, Exit enregistre « ${com.karelisio.exit.data.AutoBackup.FILE_NAME} » dans le dossier choisi. Pour restaurer : Importer un JSON.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.backupNow()
+                    backupMenu = false
+                }) { Text("Sauvegarder maintenant") }
+            },
+            dismissButton = {
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                    TextButton(onClick = {
+                        backupMenu = false
+                        folderPicker.launch(null)
+                    }) { Text("Changer de dossier") }
+                    TextButton(onClick = {
+                        vm.setAutoBackupFolder(null)
+                        backupMenu = false
+                    }) { Text("Désactiver") }
+                }
+            },
+        )
     }
     pendingImport?.let { text ->
         AlertDialog(

@@ -25,6 +25,8 @@ data class PlanSnapshot(
     val projectedQuitDay: LocalDate?,
     /** L'objectif est atteint : il ne reste qu'à arrêter. */
     val reachedZero: Boolean,
+    /** Objectif « première du matin » du jour, si actif et pas encore de cigarette aujourd'hui. */
+    val morningGoalAt: Long? = null,
 ) {
     fun isOk(now: Long): Boolean = nextAllowedAt == null || now >= nextAllowedAt
 
@@ -135,12 +137,18 @@ object PlanEngine {
         val today = day(now, zone)
         val interval = intervalMinutes(c, today, zone)
         val projected = projectedQuitDay(c, zone)
+        val morning = if (phase(c) == Phase.SPACING && c.morningDelayMinutes > 0 && todayCount == 0) {
+            startOfDay(today, zone) + (c.wakeMinutes + c.morningDelayMinutes) * MINUTE_MS
+        } else {
+            null
+        }
         return PlanSnapshot(
             phase = phase(c),
             intervalMinutes = interval,
             targetToday = targetPerDay(c, today, zone),
             lastSmokeAt = lastSmokeAt,
-            nextAllowedAt = lastSmokeAt?.plus(interval * MINUTE_MS),
+            nextAllowedAt = listOfNotNull(lastSmokeAt?.plus(interval * MINUTE_MS), morning).maxOrNull(),
+            morningGoalAt = morning,
             todayCount = todayCount,
             quitDay = quitDay(c),
             projectedQuitDay = projected,

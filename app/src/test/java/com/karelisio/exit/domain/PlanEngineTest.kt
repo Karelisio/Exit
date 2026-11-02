@@ -102,6 +102,19 @@ class PlanEngineTest {
     }
 
     @Test
+    fun `objectif du matin, la première cigarette attend le délai après le réveil`() {
+        val c = config(quitInDays = 32).copy(morningDelayMinutes = 60)
+        val lastNight = start.atTime(22, 0).atZone(zone).toInstant().toEpochMilli()
+        val morning = start.plusDays(1).atTime(7, 30).atZone(zone).toInstant().toEpochMilli()
+        val s = PlanEngine.snapshot(c, lastNight, 0, morning, zone)
+        // Réveil 7 h + 60 min = 8 h, plus tard que 22 h + intervalle.
+        assertEquals(start.plusDays(1).atTime(8, 0).atZone(zone).toInstant().toEpochMilli(), s.nextAllowedAt)
+        assertFalse(s.isOk(morning))
+        // Une fois la première fumée, l'objectif du matin ne s'applique plus.
+        assertNull(PlanEngine.snapshot(c, morning, 1, morning, zone).morningGoalAt)
+    }
+
+    @Test
     fun `pas de réajustement pendant l'arrêt`() {
         val c = config(quitInDays = 10).copy(phase = Phase.QUIT.name)
         val now = start.plusDays(8).atStartOfDay(zone).toInstant().toEpochMilli()

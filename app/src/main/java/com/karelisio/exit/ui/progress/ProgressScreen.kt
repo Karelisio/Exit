@@ -115,6 +115,7 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                 reboundEver = d.events.any { it.type == PlanEventType.RESUME_PLAN.name } ||
                     d.events.any { it.type == PlanEventType.SLIP.name } && PlanEngine.phase(c) == Phase.QUIT && streakMinutes > 24 * 60,
                 onTimeCount = d.smokes.count { !it.early && !it.slip },
+                bonusMinutes = d.smokes.sumOf { it.bonusMinutes },
             ),
         )
     }
@@ -175,6 +176,7 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                     )
                 }
             }
+            item(key = "piggy") { PiggyBank(c, gains.money, onSave = { label, amount -> vm.updateConfig { it.copy(savingsGoalLabel = label, savingsGoalAmount = amount) } }, modifier = Modifier.cascade(2)) }
             item(key = "healthTitle") {
                 Column {
                     SectionTitle("Jalons santé")
@@ -237,6 +239,69 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                 }
             },
             confirmButton = { TextButton(onClick = { openBadge = null }) { Text("OK") } },
+        )
+    }
+}
+
+/** Objectif tirelire : ce que les économies vont offrir. */
+@Composable
+private fun PiggyBank(c: com.karelisio.exit.data.ConfigEntity, money: Double, onSave: (String, Double) -> Unit, modifier: Modifier = Modifier) {
+    var editing by remember { mutableStateOf(false) }
+    val goal = c.savingsGoalAmount
+    ExitCard(color = MaterialTheme.colorScheme.secondaryContainer, onClick = { editing = true }, modifier = modifier) {
+        val on = MaterialTheme.colorScheme.onSecondaryContainer
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ShapeIcon(Icons.Rounded.Savings, MaterialShapes.Bun, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary, size = 44.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                if (goal <= 0) {
+                    Text("Un objectif tirelire ?", style = MaterialTheme.typography.titleMedium, color = on)
+                    Text("Un week-end, un vélo, un cadeau… Touche pour le choisir.", style = MaterialTheme.typography.bodyMedium, color = on)
+                } else {
+                    Text(c.savingsGoalLabel.ifBlank { "Mon objectif" }, style = MaterialTheme.typography.titleMedium, color = on)
+                    Text(
+                        if (money >= goal) "Objectif atteint 🎉 Fais-toi plaisir !" else "${Fmt.money(money)} sur ${Fmt.money(goal)} · encore ${Fmt.money(goal - money)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = on,
+                    )
+                }
+            }
+        }
+        if (goal > 0) {
+            Spacer(Modifier.height(12.dp))
+            LinearWavyProgressIndicator(progress = { (money / goal).toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+    if (editing) {
+        var label by remember { mutableStateOf(c.savingsGoalLabel) }
+        var amount by remember { mutableStateOf(if (goal > 0) "%.0f".format(goal) else "") }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text("Objectif tirelire") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.OutlinedTextField(label, { label = it.take(40) }, label = { Text("Pour quoi ?") }, singleLine = true)
+                    androidx.compose.material3.OutlinedTextField(
+                        amount,
+                        { amount = it.filter { ch -> ch.isDigit() || ch == ',' || ch == '.' }.take(7) },
+                        label = { Text("Montant (€)") },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onSave(label.trim(), amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0)
+                    editing = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onSave("", 0.0)
+                    editing = false
+                }) { Text("Retirer") }
+            },
         )
     }
 }

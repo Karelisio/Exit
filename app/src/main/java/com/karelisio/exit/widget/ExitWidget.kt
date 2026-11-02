@@ -71,6 +71,7 @@ internal data class WidgetState(
     val target: Int,
     val nextAllowedAt: Long?,
     val ok: Boolean,
+    val progress: Float,
     val streakStart: Long?,
     val now: Long,
 )
@@ -78,7 +79,7 @@ internal data class WidgetState(
 internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: Long): WidgetState {
     val zone = ZoneId.systemDefault()
     if (config == null || !config.onboardingDone) {
-        return WidgetState(false, Phase.SPACING, 0, 0, null, true, null, now)
+        return WidgetState(false, Phase.SPACING, 0, 0, null, true, 1f, null, now)
     }
     val today = PlanEngine.day(now, zone)
     val todayCount = smokes.count { PlanEngine.day(it.timestamp, zone) == today }
@@ -91,6 +92,7 @@ internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: 
         target = kotlin.math.ceil(snapshot.targetToday).toInt(),
         nextAllowedAt = snapshot.nextAllowedAt,
         ok = snapshot.isOk(now),
+        progress = snapshot.progress(now),
         streakStart = listOfNotNull(last, config.quitStartedAt).maxOrNull(),
         now = now,
     )
@@ -251,6 +253,17 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
         actionRunCallback<LogSmokeAction>()
     }
     val description = if (quit) "SOS envie" else "J'en fume une"
+    val showRing = !quit && !state.ok
+    val ringColor = GlanceTheme.colors.primary.getColor(context).toArgb()
+    val trackColor = GlanceTheme.colors.surfaceVariant.getColor(context).toArgb()
+    Box(contentAlignment = Alignment.Center) {
+    if (showRing) {
+        Image(
+            provider = ImageProvider(ringBitmap(context, (sizeDp + 12), state.progress, ringColor, trackColor)),
+            contentDescription = null,
+            modifier = GlanceModifier.size((sizeDp + 12).dp),
+        )
+    }
     Box(
         modifier = GlanceModifier
             .size(sizeDp.dp)
@@ -278,6 +291,26 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
             )
         }
     }
+    }
+}
+
+/** Anneau de progression dessiné en bitmap (rafraîchi par les alarmes de tick du widget). */
+private fun ringBitmap(context: Context, sizeDp: Int, progress: Float, color: Int, track: Int): android.graphics.Bitmap {
+    val px = (sizeDp * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+    val bitmap = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    val stroke = px * 0.07f
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE
+        strokeWidth = stroke
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    val rect = android.graphics.RectF(stroke, stroke, px - stroke, px - stroke)
+    paint.color = track
+    canvas.drawArc(rect, 0f, 360f, false, paint)
+    paint.color = color
+    canvas.drawArc(rect, -90f, 360f * progress.coerceIn(0.02f, 1f), false, paint)
+    return bitmap
 }
 
 /** Chronomètre système (RemoteViews) : se met à jour seul chaque seconde, sans réveiller l'appli. */

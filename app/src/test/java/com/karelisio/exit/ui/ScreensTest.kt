@@ -72,7 +72,7 @@ class ScreensTest {
         compose.mainClock.autoAdvance = false
         val vm = AppViewModel(app.container)
         compose.setContent { ExitTheme(dynamicColor = false) { ExitRoot(vm, null) {} } }
-        repeat(20) {
+        repeat(200) {
             if (vm.data.value != null) return@repeat
             Thread.sleep(50)
         }

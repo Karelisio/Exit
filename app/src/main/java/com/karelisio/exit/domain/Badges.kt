@@ -21,6 +21,7 @@ data class BadgeInputs(
     val quitEver: Boolean,
     val reboundEver: Boolean,
     val onTimeCount: Int,
+    val bonusMinutes: Int = 0,
 )
 
 /** Badges calculés à partir de l'historique : rien n'est perdu après un écart. */
@@ -34,6 +35,7 @@ object Badges {
             Badge("sos10", "Bouclier", "10 envies surmontées", BadgeIcon.SHIELD, ratio(i.cravingsOvercome.toDouble(), 10.0)),
             Badge("sos50", "Forteresse", "50 envies surmontées", BadgeIcon.SHIELD, ratio(i.cravingsOvercome.toDouble(), 50.0)),
             Badge("ontime10", "Patience", "10 cigarettes après la fin du minuteur", BadgeIcon.TIMER, ratio(i.onTimeCount.toDouble(), 10.0)),
+            Badge("bonus", "Tenace", "10 heures tenues au-delà du minuteur, au total", BadgeIcon.TIMER, ratio(i.bonusMinutes.toDouble(), 600.0)),
             Badge("quit", "Le grand saut", "Passer en phase d'arrêt complet", BadgeIcon.FLAG, if (i.quitEver) 1f else 0f),
             Badge("d1", "24 heures", "Une journée entière sans fumer", BadgeIcon.STREAK, ratio(streakDays, 1.0)),
             Badge("d3", "3 jours", "La nicotine a quitté ton corps", BadgeIcon.STREAK, ratio(streakDays, 3.0)),

@@ -25,7 +25,10 @@ class AlarmReceiver : BroadcastReceiver() {
                         if (config.notifyNextAllowed && snapshot.phase == Phase.SPACING && snapshot.isOk(System.currentTimeMillis()) &&
                             isAwake(minute, config.wakeMinutes, config.sleepMinutes)
                         ) {
-                            container.notifications.showNextAllowed(snapshot.intervalMinutes)
+                            container.notifications.showNextAllowed(
+                                snapshot.intervalMinutes,
+                                config.reasons.lines().map { it.trim() }.filter { it.isNotEmpty() }.randomOrNull(),
+                            )
                         }
                     }
                     ACTION_MILESTONE -> {
@@ -35,6 +38,12 @@ class AlarmReceiver : BroadcastReceiver() {
                             val minutes = (System.currentTimeMillis() - start) / MINUTE_MS + 1
                             HealthMilestones.reached(minutes).lastOrNull()?.let(container.notifications::showMilestone)
                         }
+                    }
+                    ACTION_WEEKLY -> {
+                        val review = com.karelisio.exit.domain.WeeklyReviewCalculator.compute(
+                            config, repo.allSmokes(), repo.allCravings(), java.time.LocalDate.now(), java.time.ZoneId.systemDefault(),
+                        )
+                        container.notifications.showWeeklyReview(review)
                     }
                     ACTION_MIDNIGHT -> {
                         repo.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it.message) }
@@ -51,6 +60,8 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_NEXT_ALLOWED = "com.karelisio.exit.NEXT_ALLOWED"
         const val ACTION_MILESTONE = "com.karelisio.exit.MILESTONE"
         const val ACTION_MIDNIGHT = "com.karelisio.exit.MIDNIGHT"
+        const val ACTION_WIDGET_TICK = "com.karelisio.exit.WIDGET_TICK"
+        const val ACTION_WEEKLY = "com.karelisio.exit.WEEKLY"
 
         /** Pas de notification la nuit : le minuteur affiche « OK », c'est suffisant. */
         fun isAwake(minute: Int, wake: Int, sleep: Int): Boolean =

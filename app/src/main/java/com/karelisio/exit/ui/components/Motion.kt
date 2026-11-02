@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import com.karelisio.exit.ui.theme.LocalReduceMotion
 import kotlinx.coroutines.delay
@@ -82,7 +84,7 @@ fun AnimatedCounter(
     modifier: Modifier = Modifier,
     color: Color = LocalContentColor.current,
 ) {
-    Row(modifier) {
+    Row(modifier.clearAndSetSemantics { contentDescription = text }) {
         val chars = text.toList()
         chars.forEachIndexed { index, char ->
             key(chars.size - index) {

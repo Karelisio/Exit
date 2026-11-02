@@ -56,6 +56,12 @@ interface CravingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(cravings: List<CravingEntity>)
 
+    @Query("SELECT * FROM cravings ORDER BY timestamp DESC LIMIT 1")
+    suspend fun last(): CravingEntity?
+
+    @Update
+    suspend fun update(craving: CravingEntity)
+
     @Delete
     suspend fun delete(craving: CravingEntity)
 

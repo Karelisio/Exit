@@ -1,0 +1,4 @@
+# Profil de référence : précompile le code d'Exit au moment de l'installation (ProfileInstaller),
+# pour un démarrage et des animations fluides dès le premier lancement.
+HSPLcom/karelisio/exit/**->**(**)**
+Lcom/karelisio/exit/**;

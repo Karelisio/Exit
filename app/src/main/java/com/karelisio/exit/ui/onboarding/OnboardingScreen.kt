@@ -111,7 +111,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-private enum class Page { WELCOME, SPACING, SOS, CONSUMPTION, GOAL, NOTIFICATIONS, ALARMS, BATTERY, INSTALL, READY }
+private enum class Page { WELCOME, SPACING, SOS, CONSUMPTION, GOAL, REASONS, NOTIFICATIONS, ALARMS, BATTERY, INSTALL, READY }
 
 private val Page.permission: ExitPermission?
     get() = when (this) {
@@ -141,13 +141,14 @@ fun OnboardingScreen(vm: AppViewModel) {
     var quitEpochDay by rememberSaveable { mutableStateOf(LocalDate.now().plusDays(42).toEpochDay()) }
     var step by rememberSaveable { mutableStateOf(StepPeriod.DAY) }
     var stepMinutes by rememberSaveable { mutableIntStateOf(5) }
+    var reasons by rememberSaveable { mutableStateOf("") }
     val priceValue = price.replace(',', '.').toDoubleOrNull()
 
     val current = pages[pager.currentPage]
     val canGoOn = current != Page.CONSUMPTION || (priceValue != null && priceValue in 0.0..100.0)
     val finish = {
         haptics.success()
-        vm.completeOnboarding(cigsPerDay, priceValue ?: 13.0, perPack, if (hasDate) LocalDate.ofEpochDay(quitEpochDay) else null, step, stepMinutes)
+        vm.completeOnboarding(cigsPerDay, priceValue ?: 13.0, perPack, if (hasDate) LocalDate.ofEpochDay(quitEpochDay) else null, step, stepMinutes, reasons)
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).systemBarsPadding().imePadding()) {
@@ -202,6 +203,7 @@ fun OnboardingScreen(vm: AppViewModel) {
                         step, { step = it },
                         stepMinutes, { stepMinutes = it },
                     )
+                    Page.REASONS -> Reasons(reasons) { reasons = it }
                     Page.NOTIFICATIONS, Page.ALARMS, Page.BATTERY, Page.INSTALL -> {
                         val p = page.permission!!
                         PermissionPage(p, permissions.isGranted(p), onRequest = { permissions.request(p) })
@@ -423,6 +425,42 @@ private fun Goal(
             },
             dismissButton = { TextButton(onClick = { pick = false }) { Text("Annuler") } },
         ) { DatePicker(state) }
+    }
+}
+
+private val REASON_IDEAS = listOf(
+    "Mieux respirer", "Ma santé", "Mes proches", "Économiser", "Retrouver le goût et l'odorat",
+    "Me sentir libre", "Faire du sport", "Montrer l'exemple",
+)
+
+/** Mes raisons d'arrêter : rappelées dans le mode SOS et dans les notifications. */
+@Composable
+private fun Reasons(text: String, onChange: (String) -> Unit) {
+    val haptics = rememberHaptics()
+    val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
+        PageTitle("Tes raisons", "Pourquoi tu veux arrêter ? Exit te les rappellera au moment où une envie arrive. Facultatif, modifiable plus tard.")
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            REASON_IDEAS.forEach { idea ->
+                androidx.compose.material3.FilterChip(
+                    selected = idea in lines,
+                    onClick = {
+                        haptics.tick()
+                        onChange((if (idea in lines) lines - idea else lines + idea).joinToString("\n"))
+                    },
+                    label = { Text(idea) },
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = text,
+            onValueChange = { onChange(it.take(500)) },
+            label = { Text("Une raison par ligne") },
+            minLines = 4,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(24.dp))
     }
 }
 

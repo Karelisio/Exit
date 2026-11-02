@@ -106,5 +106,6 @@ class MainActivity : ComponentActivity() {
         const val DEST_SOS = "sos"
         const val DEST_PLAN = "plan"
         const val DEST_PROGRESS = "progress"
+        const val DEST_REVIEW = "review"
     }
 }

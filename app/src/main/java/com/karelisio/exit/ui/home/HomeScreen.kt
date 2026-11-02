@@ -72,6 +72,8 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.data.ConfigEntity
@@ -180,6 +182,10 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             TimerHero(snapshot, now)
                             Spacer(Modifier.height(12.dp))
                             InfoPills(snapshot, todayCount)
+                            snapshot.morningGoalAt?.takeIf { it > now }?.let {
+                                Spacer(Modifier.height(8.dp))
+                                Pill("☀️ Première du matin : pas avant ${Fmt.time(it)}")
+                            }
                             Spacer(Modifier.height(16.dp))
                             SmokeButton {
                                 haptics.confirm()
@@ -199,6 +205,15 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             haptics.tick()
                             vm.logSmoke()
                         }, modifier = Modifier.cascade(1).animateItem())
+                    }
+                }
+                val dow = LocalDate.now().dayOfWeek
+                if (dow == java.time.DayOfWeek.SUNDAY || dow == java.time.DayOfWeek.MONDAY) {
+                    item(key = "review") {
+                        ExitCard(color = MaterialTheme.colorScheme.tertiaryContainer, onClick = nav::review, modifier = Modifier.cascade(2).animateItem()) {
+                            Text("Ton bilan de la semaine est prêt", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Text("Envies surmontées, bonus tenu, économies : viens voir.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
                     }
                 }
                 item(key = "plan") { PlanCard(c, snapshot, d, onClick = nav::plan, modifier = Modifier.cascade(3).animateItem()) }
@@ -301,7 +316,9 @@ private fun TimerHero(snapshot: PlanSnapshot, now: Long) {
     TimerRing(
         progress = snapshot.progress(now),
         ok = ok,
-        modifier = Modifier.fillMaxWidth(0.82f),
+        modifier = Modifier.fillMaxWidth(0.82f).clearAndSetSemantics {
+            contentDescription = if (ok) "C'est OK si tu en as besoin" else "Prochaine cigarette autorisée à ${snapshot.nextAllowedAt?.let { Fmt.time(it) }}"
+        },
     ) {
         AnimatedContent(
             targetState = ok,
@@ -390,6 +407,8 @@ private fun LoggedCard(logged: SmokeLogged?, vm: AppViewModel, onClose: () -> Un
                     Text(
                         if (current.minutesEarly > 0) {
                             "${PlanEngine.formatDuration(current.minutesEarly)} en avance. Pas grave, on continue ensemble."
+                        } else if (current.smoke.bonusMinutes > 0) {
+                            "Tu as tenu ${PlanEngine.formatDuration(current.smoke.bonusMinutes)} de plus que prévu. Bravo 💪"
                         } else {
                             "Merci de l'avoir notée. Le minuteur repart."
                         },

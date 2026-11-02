@@ -50,7 +50,7 @@ class ExitNotifications(private val context: Context) {
         return PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    fun showNextAllowed(intervalMinutes: Int) {
+    fun showNextAllowed(intervalMinutes: Int, reason: String? = null) {
         if (!canPost()) return
         val smoke = PendingIntent.getBroadcast(
             context,
@@ -65,7 +65,8 @@ class ExitNotifications(private val context: Context) {
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
                     "${PlanEngine.formatDuration(intervalMinutes)} tenues, bravo. Tu peux en fumer une si tu en as besoin… " +
-                        "ou essayer de tenir encore un peu : chaque minute compte.",
+                        "ou essayer de tenir encore un peu : chaque minute compte." +
+                        (reason?.let { "\nTa raison : $it" } ?: ""),
                 ),
             )
             .setContentIntent(openApp())
@@ -105,6 +106,25 @@ class ExitNotifications(private val context: Context) {
         manager.notify(ID_PLAN, notification)
     }
 
+    fun showWeeklyReview(review: com.karelisio.exit.domain.WeeklyReview) {
+        if (!canPost()) return
+        val text = buildString {
+            append("${review.smokes} cigarette${if (review.smokes > 1) "s" else ""} cette semaine")
+            review.change?.let { if (it < 0) append(" (${it} %)") }
+            if (review.cravingsOvercome > 0) append(", ${review.cravingsOvercome} envie${if (review.cravingsOvercome > 1) "s" else ""} surmontée${if (review.cravingsOvercome > 1) "s" else ""}")
+            append(". Viens voir ton bilan.")
+        }
+        val notification = NotificationCompat.Builder(context, CHANNEL_MILESTONES)
+            .setSmallIcon(R.drawable.ic_stat_exit)
+            .setContentTitle("Ton bilan de la semaine est prêt")
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(openApp(MainActivity.DEST_REVIEW, REQ_REVIEW))
+            .setAutoCancel(true)
+            .build()
+        manager.notify(ID_REVIEW, notification)
+    }
+
     fun showUpdateAvailable(version: String) {
         if (!canPost()) return
         val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
@@ -127,10 +147,12 @@ class ExitNotifications(private val context: Context) {
         private const val ID_MILESTONE = 2
         private const val ID_PLAN = 3
         private const val ID_UPDATE = 4
+        private const val ID_REVIEW = 5
 
         private const val REQ_ACTION_SMOKE = 10
         private const val REQ_SOS = 11
         private const val REQ_PROGRESS = 12
         private const val REQ_PLAN = 13
+        private const val REQ_REVIEW = 14
     }
 }

@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object SettingsRoute
 @Serializable data object PermissionsRoute
 @Serializable data object SourcesRoute
+@Serializable data object ReviewRoute
 
 enum class TopLevel(val route: Any, val label: String, val icon: ImageVector, val selectedIcon: ImageVector) {
     HOME(HomeRoute, "Accueil", Icons.Outlined.Home, Icons.Rounded.Home),

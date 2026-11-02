@@ -4,4 +4,6 @@
     <string name="widget_name">Exit</string>
     <string name="widget_description">Minuteur « prochaine autorisée », bouton +1 et compteur du jour</string>
     <string name="shortcut_sos">SOS envie</string>
+    <string name="tile_smoke">J\'en fume une</string>
+    <string name="sos_widget_description">Un tap pour ouvrir le mode SOS envie</string>
 </resources>

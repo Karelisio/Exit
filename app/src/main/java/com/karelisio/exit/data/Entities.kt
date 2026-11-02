@@ -19,6 +19,8 @@ data class SmokeEntity(
     val note: String? = null,
     /** Fumée pendant la phase d'arrêt : c'est un écart, pas un échec. */
     @ColumnInfo(defaultValue = "0") val slip: Boolean = false,
+    /** Minutes tenues au-delà de la prochaine autorisée (« bonus tenu »). */
+    @ColumnInfo(defaultValue = "0") val bonusMinutes: Int = 0,
 )
 
 /** Une envie, surmontée ou non (mode SOS). */
@@ -31,6 +33,9 @@ data class CravingEntity(
     val trigger: String? = null,
     val note: String? = null,
     val durationSeconds: Int = 0,
+    /** Intensité de l'envie (1 à 5) au début et à la fin du SOS. */
+    val intensityStart: Int? = null,
+    val intensityEnd: Int? = null,
 )
 
 /** Journal du plan : ajustements automatiques ou manuels, arrêt, écarts, reprise. */
@@ -83,4 +88,14 @@ data class ConfigEntity(
     val dynamicColor: Boolean = true,
     /** Dernier jalon santé célébré (en minutes sans fumer), pour ne fêter chaque jalon qu'une fois. */
     val lastCelebratedMilestoneMinutes: Long = 0,
+    /** Mes raisons d'arrêter, une par ligne. */
+    @ColumnInfo(defaultValue = "") val reasons: String = "",
+    /** Objectif tirelire (libellé et montant ; 0 = pas d'objectif). */
+    @ColumnInfo(defaultValue = "") val savingsGoalLabel: String = "",
+    @ColumnInfo(defaultValue = "0") val savingsGoalAmount: Double = 0.0,
+    /** Délai minimum entre le réveil et la première cigarette (0 = désactivé). */
+    @ColumnInfo(defaultValue = "0") val morningDelayMinutes: Int = 0,
+    /** Dossier choisi pour la sauvegarde automatique (URI SAF), null = désactivée. */
+    val autoBackupUri: String? = null,
+    val lastAutoBackupAt: Long? = null,
 )

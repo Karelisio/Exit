@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.karelisio.exit.ui.components.rememberHaptics
 import kotlin.math.PI
 import kotlin.math.cos
@@ -59,7 +61,11 @@ fun BubbleGame(modifier: Modifier = Modifier) {
     }
 
     val scheme = MaterialTheme.colorScheme
-    Surface(modifier, shape = MaterialTheme.shapes.large, color = scheme.surfaceContainerHigh) {
+    Surface(
+        modifier.semantics { contentDescription = "Mini-jeu : éclate les bouffées de fumée. $score éclatées." },
+        shape = MaterialTheme.shapes.large,
+        color = scheme.surfaceContainerHigh,
+    ) {
         Box {
             Canvas(
                 Modifier

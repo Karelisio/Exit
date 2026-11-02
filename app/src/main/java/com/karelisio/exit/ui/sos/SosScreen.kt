@@ -70,6 +70,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
@@ -132,6 +134,8 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
     var note by rememberSaveable { mutableStateOf("") }
     var burst by remember { mutableIntStateOf(0) }
     var victories by rememberSaveable { mutableIntStateOf(0) }
+    var intensity by rememberSaveable { mutableStateOf<Int?>(null) }
+    val reasons = remember(c.reasons) { c.reasons.lines().map { it.trim() }.filter { it.isNotEmpty() } }
 
     // L'écran reste allumé pendant l'exercice.
     val view = LocalView.current
@@ -143,7 +147,7 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
     val seconds = { ((System.currentTimeMillis() - startedAt) / 1000).toInt() }
     val overcome = {
         victories = d.cravings.count { it.overcome } + 1
-        vm.logCraving(true, trigger?.name, note.takeIf { trigger == Trigger.PERSO && it.isNotBlank() }, seconds())
+        vm.logCraving(true, trigger?.name, note.takeIf { trigger == Trigger.PERSO && it.isNotBlank() }, seconds(), intensityStart = intensity)
         haptics.success()
         burst++
         step = SosStep.DONE
@@ -171,6 +175,9 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
                             inhale = c.breathInhaleSeconds,
                             exhale = c.breathExhaleSeconds,
                             hapticsOn = c.breathHaptics,
+                            reasons = reasons,
+                            intensity = intensity,
+                            onIntensity = { intensity = it },
                             trigger = trigger,
                             note = note,
                             onTrigger = { trigger = it },
@@ -178,15 +185,18 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
                             onRhythm = { r -> vm.updateConfig { it.copy(breathInhaleSeconds = r.inhale, breathExhaleSeconds = r.exhale) } },
                             onOvercome = overcome,
                             onGaveIn = {
-                                vm.logCraving(false, trigger?.name, note.takeIf { trigger == Trigger.PERSO && it.isNotBlank() }, seconds(), alsoSmoke = true)
+                                vm.logCraving(false, trigger?.name, note.takeIf { trigger == Trigger.PERSO && it.isNotBlank() }, seconds(), alsoSmoke = true, intensityStart = intensity)
                                 nav.back()
                             },
                         )
                         SosStep.DONE -> Done(
                             victories = victories,
+                            startIntensity = intensity,
+                            onEndIntensity = vm::setCravingEndIntensity,
                             onBack = { nav.back() },
                             onAgain = {
                                 startedAt = System.currentTimeMillis()
+                                intensity = null
                                 step = SosStep.RUNNING
                             },
                         )
@@ -204,6 +214,9 @@ private fun Running(
     inhale: Float,
     exhale: Float,
     hapticsOn: Boolean,
+    reasons: List<String>,
+    intensity: Int?,
+    onIntensity: (Int?) -> Unit,
     trigger: Trigger?,
     note: String,
     onTrigger: (Trigger?) -> Unit,
@@ -240,7 +253,12 @@ private fun Running(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (reasons.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            ReasonCard(reasons)
+        }
         Spacer(Modifier.height(12.dp))
+        IntensityRow("Intensité de l'envie", intensity, onIntensity)
         Breathing(inhale, exhale, hapticsOn, Modifier.fillMaxWidth(0.82f))
         Spacer(Modifier.height(8.dp))
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,9 +385,56 @@ private fun Breathing(inhale: Float, exhale: Float, hapticsOn: Boolean, modifier
                 transitionSpec = { (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut()) },
                 label = "breathLabel",
             ) { i ->
-                Text(if (i) "Inspire" else "Expire", style = MaterialTheme.typography.headlineMedium, color = scheme.onPrimary)
+                Text(if (i) "Inspire" else "Expire", style = MaterialTheme.typography.headlineMedium, color = scheme.onPrimaryContainer)
             }
-            Text("$phaseLeft", style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = scheme.onPrimary)
+            Text("$phaseLeft", style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = scheme.onPrimaryContainer)
+        }
+    }
+}
+
+/** Intensité de 1 (légère) à 5 (très forte), facultative. */
+@Composable
+private fun IntensityRow(label: String, value: Int?, onChange: (Int?) -> Unit) {
+    val haptics = rememberHaptics()
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            (1..5).forEach { i ->
+                FilterChip(
+                    selected = value == i,
+                    onClick = {
+                        haptics.tick()
+                        onChange(if (value == i) null else i)
+                    },
+                    label = { Text("$i") },
+                    modifier = Modifier.semantics { contentDescription = "Intensité $i sur 5" },
+                )
+            }
+        }
+    }
+}
+
+/** Une de tes raisons d'arrêter, qui change toutes les 6 secondes. */
+@Composable
+private fun ReasonCard(reasons: List<String>) {
+    var index by remember { mutableIntStateOf(0) }
+    LaunchedEffect(reasons) {
+        while (true) {
+            delay(6_000)
+            index = (index + 1) % reasons.size
+        }
+    }
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.tertiaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Ta raison", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            AnimatedContent(
+                targetState = reasons[index % reasons.size],
+                transitionSpec = { (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut()) },
+                label = "reason",
+            ) { r ->
+                Text(r, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onTertiaryContainer, textAlign = TextAlign.Center)
+            }
         }
     }
 }
@@ -401,7 +466,8 @@ private fun Ideas() {
 }
 
 @Composable
-private fun Done(victories: Int, onBack: () -> Unit, onAgain: () -> Unit) {
+private fun Done(victories: Int, startIntensity: Int?, onEndIntensity: (Int) -> Unit, onBack: () -> Unit, onAgain: () -> Unit) {
+    var end by rememberSaveable { mutableStateOf<Int?>(null) }
     Column(
         Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -425,7 +491,22 @@ private fun Done(victories: Int, onBack: () -> Unit, onAgain: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
+        IntensityRow("Et maintenant, l'envie ?", end) { v ->
+            end = v
+            if (v != null) onEndIntensity(v)
+        }
+        AnimatedVisibility(end != null && startIntensity != null) {
+            val from = startIntensity ?: 0
+            val to = end ?: 0
+            Text(
+                if (to < from) "De $from à $to : elle est bien redescendue." else "Elle est encore là, et c'est normal : tu l'as quand même traversée.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Spacer(Modifier.height(24.dp))
         Button(onClick = onBack, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Retour") }
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onAgain) { Text("Encore un peu de respiration") }

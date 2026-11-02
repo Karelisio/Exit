@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.domain.PlanEngine
@@ -68,8 +70,8 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
     val data by vm.data.collectAsStateWithLifecycle()
     val d = data ?: return
     val zone = ZoneId.systemDefault()
-    val stats = remember(d.smokes, d.cravings) {
-        StatsCalculator.compute(d.smokes, d.cravings, d.config.startedAt, System.currentTimeMillis(), zone)
+    val stats = remember(d.smokes, d.cravings, d.config.wakeMinutes) {
+        StatsCalculator.compute(d.smokes, d.cravings, d.config.startedAt, System.currentTimeMillis(), zone, wakeMinutes = d.config.wakeMinutes)
     }
     val target = remember(d.config) {
         stats.daily.map { (day, _) -> PlanEngine.targetPerDay(d.config, day, zone).toFloat().takeIf { day >= PlanEngine.anchorDay(d.config, zone) } }
@@ -87,6 +89,13 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "review") {
+                androidx.compose.material3.FilledTonalButton(
+                    onClick = nav::review,
+                    shapes = androidx.compose.material3.ButtonDefaults.shapes(),
+                    modifier = Modifier.fillMaxWidth().cascade(0),
+                ) { Text("Bilan de la semaine") }
+            }
             item(key = "chart") {
                 ExitCard(modifier = Modifier.cascade(0)) {
                     Text("Consommation", style = MaterialTheme.typography.titleMedium)
@@ -125,6 +134,23 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Figure("Meilleure série sans fumer", "${stats.longestSmokeFreeDays} j", Modifier.weight(1f))
                         Figure("Envies surmontées", "${stats.cravingsOvercome} / ${stats.cravingsTotal}", Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Figure("Bonus tenu (au-delà du minuteur)", if (stats.bonusMinutes > 0) Fmt.duration(stats.bonusMinutes * 60_000L) else "—", Modifier.weight(1f))
+                        Figure(
+                            "Intensité des envies (début → fin)",
+                            if (stats.intensityStartAvg != null) "%.1f → %s".format(stats.intensityStartAvg, stats.intensityEndAvg?.let { "%.1f".format(it) } ?: "?") else "—",
+                            Modifier.weight(1f),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val delay = stats.morningDelay
+                        val prev = stats.previousMorningDelay
+                        Figure(
+                            "Première du matin après le réveil (7 j)",
+                            delay?.let { PlanEngine.formatDuration(it) + (prev?.let { p -> (it - p).takeIf { d -> d != 0 }?.let { d -> if (d > 0) " (+$d)" else " ($d)" } } ?: "") } ?: "—",
+                            Modifier.weight(1f),
+                        )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Figure("Cigarettes notées", Fmt.number(stats.total), Modifier.weight(1f))
@@ -234,7 +260,8 @@ private fun BarChart(values: List<Int>, labels: List<String>, target: List<Float
     val dash = MaterialTheme.colorScheme.outline
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val max = maxOf(values.maxOrNull() ?: 0, target.filterNotNull().maxOrNull()?.toInt() ?: 0, 1)
-    Column(modifier) {
+    val summary = labels.zip(values).joinToString(", ") { (l, v) -> "$l : $v" }
+    Column(modifier.semantics { contentDescription = "Cigarettes par période. $summary" }) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Canvas(Modifier.matchParentSize()) {
                 val n = values.size.coerceAtLeast(1)

@@ -2,6 +2,7 @@ package com.karelisio.exit.data
 
 import androidx.room.withTransaction
 import com.karelisio.exit.domain.DAY_MS
+import com.karelisio.exit.domain.HOUR_MS
 import com.karelisio.exit.domain.HealthMilestones
 import com.karelisio.exit.domain.MINUTE_MS
 import com.karelisio.exit.domain.Phase
@@ -41,6 +42,10 @@ class ExitRepository(
 
     suspend fun config(): ConfigEntity = db.config().get() ?: ConfigEntity()
 
+    suspend fun allSmokes(): List<SmokeEntity> = db.smokes().all()
+
+    suspend fun allCravings(): List<CravingEntity> = db.cravings().all()
+
     private suspend fun changed() {
         onChanged?.invoke()
     }
@@ -67,6 +72,7 @@ class ExitRepository(
         quitDay: LocalDate?,
         stepPeriod: StepPeriod,
         stepMinutes: Int,
+        reasons: String = "",
     ) {
         val now = clock()
         val current = config()
@@ -84,6 +90,7 @@ class ExitRepository(
                 planAnchorPerDay = cigsPerDay.coerceIn(1, 80).toDouble(),
                 manualOffsetMinutes = 0,
                 phase = Phase.SPACING.name,
+                reasons = reasons.trim(),
             ),
         )
         if (!current.onboardingDone) event(PlanEventType.START, "Début du plan : $cigsPerDay cigarettes par jour au départ.")
@@ -100,12 +107,16 @@ class ExitRepository(
     suspend fun logSmoke(at: Long = clock(), trigger: String? = null, note: String? = null): SmokeLogged {
         val c = config()
         val zone = zone()
-        val previous = db.smokes().all().firstOrNull { it.timestamp <= at }?.timestamp
-        val interval = PlanEngine.intervalMinutes(c, PlanEngine.day(at, zone), zone)
-        val next = previous?.plus(interval * MINUTE_MS)
+        val day = PlanEngine.day(at, zone)
+        val before = db.smokes().all().filter { it.timestamp <= at }
+        val previous = before.firstOrNull()?.timestamp
+        val countToday = before.count { PlanEngine.day(it.timestamp, zone) == day }
+        val next = PlanEngine.snapshot(c, previous, countToday, at, zone).nextAllowedAt
         val quit = PlanEngine.phase(c) == Phase.QUIT
         val early = !quit && next != null && at < next
-        val smoke = SmokeEntity(timestamp = at, early = early, trigger = trigger, note = note, slip = quit)
+        // Temps tenu au-delà de la fin du minuteur (les nuits ne comptent pas).
+        val bonus = if (!quit && next != null && at > next && at - next < 6 * HOUR_MS) ((at - next) / MINUTE_MS).toInt() else 0
+        val smoke = SmokeEntity(timestamp = at, early = early, trigger = trigger, note = note, slip = quit, bonusMinutes = bonus)
         val id = db.smokes().insert(smoke)
         if (quit) event(PlanEventType.SLIP, "Un écart, noté sans jugement. Tout ce qui a été gagné reste acquis.", at)
         changed()
@@ -136,12 +147,22 @@ class ExitRepository(
 
     // --- Envies -------------------------------------------------------------------------------
 
-    suspend fun logCraving(overcome: Boolean, trigger: String?, note: String?, durationSeconds: Int): Long {
+    suspend fun logCraving(overcome: Boolean, trigger: String?, note: String?, durationSeconds: Int, intensityStart: Int? = null): Long {
         val id = db.cravings().insert(
-            CravingEntity(timestamp = clock(), overcome = overcome, trigger = trigger, note = note, durationSeconds = durationSeconds),
+            CravingEntity(
+                timestamp = clock(), overcome = overcome, trigger = trigger, note = note,
+                durationSeconds = durationSeconds, intensityStart = intensityStart,
+            ),
         )
         changed()
         return id
+    }
+
+    /** Intensité ressentie à la fin du SOS, enregistrée sur la dernière envie. */
+    suspend fun setLastCravingEndIntensity(value: Int) {
+        val last = db.cravings().last() ?: return
+        db.cravings().update(last.copy(intensityEnd = value.coerceIn(1, 5)))
+        changed()
     }
 
     suspend fun deleteCraving(craving: CravingEntity) {
@@ -267,6 +288,11 @@ class ExitRepository(
         )
         event(PlanEventType.RESUME_PLAN, "On repart sur le plan, en douceur. L'historique et les gains sont conservés.")
         changed()
+    }
+
+    /** Enregistre la date de la dernière sauvegarde automatique (sans replanifier quoi que ce soit). */
+    suspend fun markAutoBackup(at: Long) {
+        db.config().upsert(config().copy(lastAutoBackupAt = at))
     }
 
     suspend fun markMilestoneCelebrated(minutes: Long) {
