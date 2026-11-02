@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.home
 
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.domain.label
 import com.karelisio.exit.domain.title
@@ -140,6 +142,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
     val slip by vm.pendingSlip.collectAsStateWithLifecycle()
     var confirmQuit by remember { mutableStateOf(false) }
     var checkIn by remember { mutableStateOf(false) }
+    var partyDialog by remember { mutableStateOf(false) }
     val todayCheckIn = d.checkIns.firstOrNull { it.epochDay == today.toEpochDay() }
     var burst by remember { mutableIntStateOf(0) }
     var celebration by remember { mutableStateOf<String?>(null) }
@@ -187,7 +190,33 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                         AdjustmentCard(message, onDismiss = vm::dismissAdjustment, onOpen = nav::plan, modifier = Modifier.cascade(0).animateItem())
                     }
                 }
-                if (snapshot.phase == Phase.SPACING) {
+                c.partySummary?.let { summary ->
+                    item(key = "partySummary") {
+                        PartySummaryCard(summary, onDismiss = vm::dismissPartySummary, modifier = Modifier.cascade(0).animateItem())
+                    }
+                }
+                val partyStart = c.partyStartedAt
+                if (snapshot.phase == Phase.SPACING && partyStart != null) {
+                    item(key = "party") {
+                        PartyHero(
+                            count = d.smokes.count { it.party && it.timestamp >= partyStart },
+                            budget = c.partyBudget,
+                            endAt = PlanEngine.partyEndAt(c, zone),
+                            onSmoke = {
+                                haptics.confirm()
+                                vm.logSmoke()
+                            },
+                            onEnd = {
+                                haptics.success()
+                                vm.endParty()
+                            },
+                            modifier = Modifier.cascade(1).animateItem(),
+                        )
+                    }
+                    item(key = "logged") {
+                        LoggedCard(logged, vm, onClose = vm::clearLogged, modifier = Modifier.animateItem())
+                    }
+                } else if (snapshot.phase == Phase.SPACING) {
                     item(key = "hero") {
                         Column(Modifier.cascade(1).animateItem(), horizontalAlignment = Alignment.CenterHorizontally) {
                             TimerHero(snapshot, now)
@@ -201,6 +230,10 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             SmokeButton {
                                 haptics.confirm()
                                 vm.logSmoke()
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            FilledTonalButton(onClick = { partyDialog = true }, shapes = ButtonDefaults.shapes()) {
+                                Text(stringResource(R.string.party_button))
                             }
                         }
                     }
@@ -314,6 +347,14 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                 delay(3500)
                 celebration = null
             }
+        }
+    }
+
+    if (partyDialog) {
+        PartyDialog(c.partyBudget, onDismiss = { partyDialog = false }) { budget ->
+            partyDialog = false
+            haptics.success()
+            vm.startParty(budget)
         }
     }
 
@@ -442,7 +483,9 @@ private fun LoggedCard(logged: SmokeLogged?, vm: AppViewModel, onClose: () -> Un
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.home_notee_a, Fmt.time(current.smoke.timestamp)), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        if (current.minutesEarly > 0) {
+                        if (current.smoke.party) {
+                            stringResource(R.string.party_logged)
+                        } else if (current.minutesEarly > 0) {
                             stringResource(R.string.home_en_avance_pas_grave_on, PlanEngine.formatDuration(current.minutesEarly))
                         } else if (current.smoke.bonusMinutes > 0) {
                             stringResource(R.string.home_tu_as_tenu_de_plus, PlanEngine.formatDuration(current.smoke.bonusMinutes))
@@ -652,6 +695,98 @@ private fun SlipSheet(slip: SmokeLogged, d: AppData, onDismiss: () -> Unit, vm: 
                 vm.deleteSmoke(slip.smoke)
                 onDismiss()
             }) { Text(stringResource(R.string.home_je_me_suis_trompee_annuler)) }
+        }
+    }
+}
+
+/** Mode soirée : compteur « 2 / 4 », progression vers le budget, message bienveillant, fin de soirée. */
+@Composable
+private fun PartyHero(count: Int, budget: Int, endAt: Long?, onSmoke: () -> Unit, onEnd: () -> Unit, modifier: Modifier = Modifier) {
+    val over = count > budget
+    val container by androidx.compose.animation.animateColorAsState(
+        if (over) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+        label = "partyColor",
+    )
+    val on = if (over) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        ExitCard(color = container) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ShapeIcon(Icons.Rounded.Celebration, MaterialShapes.SoftBurst, on, container, size = 44.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(R.string.party_title), style = MaterialTheme.typography.titleLarge, color = on)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                AnimatedCounter("$count", MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"), color = on)
+                Text(" / $budget", style = MaterialTheme.typography.headlineMedium, color = on, modifier = Modifier.padding(bottom = 10.dp))
+            }
+            Text(stringResource(R.string.party_counter_label), style = MaterialTheme.typography.bodyLarge, color = on)
+            Spacer(Modifier.height(12.dp))
+            LinearWavyProgressIndicator(progress = { (count / budget.toFloat()).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(
+                    when {
+                        over -> R.string.party_msg_over
+                        count == budget -> R.string.party_msg_last
+                        else -> R.string.party_msg_ok
+                    },
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = on,
+            )
+            endAt?.let {
+                Text(stringResource(R.string.party_auto_end, Fmt.time(it)), style = MaterialTheme.typography.labelMedium, color = on.copy(alpha = 0.8f), modifier = Modifier.padding(top = 6.dp))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        SmokeButton(onSmoke)
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(onClick = onEnd, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.party_end)) }
+    }
+}
+
+@Composable
+private fun PartyDialog(initial: Int, onDismiss: () -> Unit, onStart: (Int) -> Unit) {
+    var budget by remember { mutableIntStateOf(initial) }
+    val haptics = rememberHaptics()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.Celebration, contentDescription = null) },
+        title = { Text(stringResource(R.string.party_dialog_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.party_dialog_text))
+                Spacer(Modifier.height(16.dp))
+                Text(stringResource(R.string.party_dialog_budget), style = MaterialTheme.typography.titleSmall)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                    androidx.compose.material3.FilledTonalIconButton(onClick = { haptics.tick(); budget = (budget - 1).coerceAtLeast(1) }) {
+                        Icon(Icons.Rounded.Remove, contentDescription = "−")
+                    }
+                    AnimatedCounter("$budget", MaterialTheme.typography.displaySmall.copy(fontFeatureSettings = "tnum"), modifier = Modifier.padding(horizontal = 24.dp))
+                    androidx.compose.material3.FilledTonalIconButton(onClick = { haptics.tick(); budget = (budget + 1).coerceAtMost(40) }) {
+                        Icon(Icons.Rounded.Add, contentDescription = "+")
+                    }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onStart(budget) }) { Text(stringResource(R.string.party_dialog_start)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun PartySummaryCard(summary: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    ExitCard(color = MaterialTheme.colorScheme.secondaryContainer, modifier = modifier) {
+        Row(verticalAlignment = Alignment.Top) {
+            ShapeIcon(Icons.Rounded.Celebration, MaterialShapes.SoftBurst, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary, size = 40.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.party_summary_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Spacer(Modifier.height(4.dp))
+                Text(summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            }
+            IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = null) }
         }
     }
 }

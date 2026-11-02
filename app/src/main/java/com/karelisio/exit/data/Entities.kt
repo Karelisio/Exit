@@ -21,6 +21,8 @@ data class SmokeEntity(
     @ColumnInfo(defaultValue = "0") val slip: Boolean = false,
     /** Minutes tenues au-delà de la prochaine autorisée (« bonus tenu »). */
     @ColumnInfo(defaultValue = "0") val bonusMinutes: Int = 0,
+    /** Fumée pendant un mode soirée : hors minuteur et hors réajustement du plan. */
+    @ColumnInfo(defaultValue = "0") val party: Boolean = false,
 )
 
 /** Une envie, surmontée ou non (mode SOS). */
@@ -106,6 +108,11 @@ data class ConfigEntity(
     @ColumnInfo(defaultValue = "0") val pureBlack: Boolean = false,
     /** Rappels doux juste avant les heures à risque. */
     @ColumnInfo(defaultValue = "0") val riskReminders: Boolean = false,
+    /** Mode soirée en cours (début) et budget de cigarettes fixé avant de sortir. */
+    val partyStartedAt: Long? = null,
+    @ColumnInfo(defaultValue = "4") val partyBudget: Int = 4,
+    /** Bilan de la dernière soirée, affiché sur l'accueil jusqu'à lecture. */
+    val partySummary: String? = null,
 )
 
 /** Point du jour : humeur et symptômes de sevrage (0 = aucun, 3 = fort). Un par jour. */

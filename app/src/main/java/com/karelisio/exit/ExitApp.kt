@@ -15,6 +15,7 @@ class ExitApp : Application() {
         container.notifications.createChannels()
         runCatching { DailyWorker.schedule(this) }
         container.scope.launch {
+            container.repository.endPartyIfDue()
             container.repository.runDriftCheck()
             container.refreshSchedules()
         }

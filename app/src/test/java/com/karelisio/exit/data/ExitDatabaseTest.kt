@@ -98,6 +98,30 @@ class ExitDatabaseTest {
         }
     }
 
+    @Test
+    fun modeSoireeHorsMinuteurEtBilan() = runBlocking {
+        val db = open(DB_A)
+        try {
+            val repo = ExitRepository(db, json)
+            repo.completeOnboarding(10, 12.0, 20, null, com.karelisio.exit.domain.StepPeriod.DAY, 5, "")
+            repo.logSmoke()
+            repo.startParty(2)
+            repeat(3) { repo.logSmoke() }
+            val party = db.smokes().all().filter { it.party }
+            assertEquals(3, party.size)
+            assertTrue(party.none { it.early })
+            repo.endParty()
+            val c = db.config().get()!!
+            assertNull(c.partyStartedAt)
+            assertTrue(c.partySummary!!.contains("3"))
+            assertEquals("PARTY", db.planEvents().all().first().type)
+            // Après la soirée, les cigarettes ne sont plus marquées « soirée ».
+            assertTrue(!repo.logSmoke().smoke.party)
+        } finally {
+            db.close()
+        }
+    }
+
     @Test(expected = Exception::class)
     fun importRefuseUnFichierQuiNEstPasUneSauvegarde() = runBlocking<Unit> {
         val db = open(DB_A)

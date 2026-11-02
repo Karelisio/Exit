@@ -279,6 +279,7 @@ private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit, onDelete: () -> Un
             }
             when {
                 smoke.slip -> Tag(stringResource(R.string.history_ecart), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                smoke.party -> Tag(stringResource(R.string.party_tag), MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
                 smoke.early -> Tag(stringResource(R.string.history_en_avance), MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

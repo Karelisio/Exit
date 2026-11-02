@@ -38,9 +38,13 @@ class AlarmScheduler(private val context: Context) {
         alarmManager.cancel(nextIntent)
         val snapshot = repository.snapshot(now)
         val next = snapshot.nextAllowedAt
-        if (config.onboardingDone && snapshot.phase == Phase.SPACING && next != null && next > now) {
+        if (config.onboardingDone && snapshot.phase == Phase.SPACING && config.partyStartedAt == null && next != null && next > now) {
             setExact(next, nextIntent)
         }
+
+        val partyIntent = pending(AlarmReceiver.ACTION_PARTY_END, REQ_PARTY)
+        alarmManager.cancel(partyIntent)
+        PlanEngine.partyEndAt(config, zone)?.let { alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, it, partyIntent) }
 
         val milestoneIntent = pending(AlarmReceiver.ACTION_MILESTONE, REQ_MILESTONE)
         alarmManager.cancel(milestoneIntent)
@@ -107,6 +111,7 @@ class AlarmScheduler(private val context: Context) {
         private const val REQ_TICK = 103
         private const val REQ_WEEKLY = 104
         private const val REQ_RISK = 105
+        private const val REQ_PARTY = 106
 
         /** Heure locale (minutes depuis minuit) d'un instant. */
         fun minuteOfDay(at: Long, zone: ZoneId = ZoneId.systemDefault()): Int {

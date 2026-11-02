@@ -65,4 +65,12 @@
         <item quantity="one">%1$d envie</item>
         <item quantity="other">%1$d envies</item>
     </plurals>
+    <plurals name="party_summary_ok">
+        <item quantity="one">%1$d cigarette pour un budget de %2$d : budget tenu 💪</item>
+        <item quantity="other">%1$d cigarettes pour un budget de %2$d : budget tenu 💪</item>
+    </plurals>
+    <plurals name="party_summary_over">
+        <item quantity="one">%1$d cigarette pour un budget de %2$d. Un peu plus que prévu, pas grave : le plan reprend normalement.</item>
+        <item quantity="other">%1$d cigarettes pour un budget de %2$d. Un peu plus que prévu, pas grave : le plan reprend normalement.</item>
+    </plurals>
 </resources>
