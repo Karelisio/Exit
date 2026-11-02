@@ -31,6 +31,7 @@ class AppContainer(context: Context) {
     val repository = ExitRepository(database, json)
     val notifications = ExitNotifications(app)
     val alarms = AlarmScheduler(app)
+    val autoBackup = com.karelisio.exit.data.AutoBackup(app, repository)
 
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)

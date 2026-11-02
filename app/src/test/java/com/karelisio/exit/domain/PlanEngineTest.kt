@@ -91,7 +91,7 @@ class PlanEngineTest {
         adj!!
         assertTrue(adj.anchorPerDay > 3.0 && adj.anchorPerDay < 12.0)
         assertTrue(adj.quitEpochDay!! > c.quitEpochDay!!)
-        assertTrue(adj.message.contains("douceur"))
+        assertNotNull(adj.pushedTo)
     }
 
     @Test
@@ -99,6 +99,19 @@ class PlanEngineTest {
         val c = config(quitInDays = 32)
         val now = start.plusDays(8).atTime(10, 0).atZone(zone).toInstant().toEpochMilli()
         assertNull(PlanEngine.driftAdjustment(c, { day -> PlanEngine.targetPerDay(c, day, zone).toInt() }, now, zone))
+    }
+
+    @Test
+    fun `objectif du matin, la première cigarette attend le délai après le réveil`() {
+        val c = config(quitInDays = 32).copy(morningDelayMinutes = 60)
+        val lastNight = start.atTime(22, 0).atZone(zone).toInstant().toEpochMilli()
+        val morning = start.plusDays(1).atTime(7, 30).atZone(zone).toInstant().toEpochMilli()
+        val s = PlanEngine.snapshot(c, lastNight, 0, morning, zone)
+        // Réveil 7 h + 60 min = 8 h, plus tard que 22 h + intervalle.
+        assertEquals(start.plusDays(1).atTime(8, 0).atZone(zone).toInstant().toEpochMilli(), s.nextAllowedAt)
+        assertFalse(s.isOk(morning))
+        // Une fois la première fumée, l'objectif du matin ne s'applique plus.
+        assertNull(PlanEngine.snapshot(c, morning, 1, morning, zone).morningGoalAt)
     }
 
     @Test

@@ -1,5 +1,13 @@
 package com.karelisio.exit.ui.stats
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
@@ -42,6 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.domain.PlanEngine
@@ -68,8 +78,8 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
     val data by vm.data.collectAsStateWithLifecycle()
     val d = data ?: return
     val zone = ZoneId.systemDefault()
-    val stats = remember(d.smokes, d.cravings) {
-        StatsCalculator.compute(d.smokes, d.cravings, d.config.startedAt, System.currentTimeMillis(), zone)
+    val stats = remember(d.smokes, d.cravings, d.config.wakeMinutes) {
+        StatsCalculator.compute(d.smokes, d.cravings, d.config.startedAt, System.currentTimeMillis(), zone, wakeMinutes = d.config.wakeMinutes)
     }
     val target = remember(d.config) {
         stats.daily.map { (day, _) -> PlanEngine.targetPerDay(d.config, day, zone).toFloat().takeIf { day >= PlanEngine.anchorDay(d.config, zone) } }
@@ -80,19 +90,26 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
-        topBar = { ExitTopBar("Stats", scroll) },
+        topBar = { ExitTopBar(stringResource(R.string.stats_stats), scroll) },
         floatingActionButton = { SosFab(nav::sos) },
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item(key = "review") {
+                androidx.compose.material3.FilledTonalButton(
+                    onClick = nav::review,
+                    shapes = androidx.compose.material3.ButtonDefaults.shapes(),
+                    modifier = Modifier.fillMaxWidth().cascade(0),
+                ) { Text(stringResource(R.string.stats_bilan_de_la_semaine)) }
+            }
             item(key = "chart") {
                 ExitCard(modifier = Modifier.cascade(0)) {
-                    Text("Consommation", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.stats_consommation), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(10.dp))
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                        listOf("14 jours", "8 semaines").forEachIndexed { i, label ->
+                        listOf(stringResource(R.string.stats_14_jours), stringResource(R.string.stats_8_semaines)).forEachIndexed { i, label ->
                             SegmentedButton(selected = range == i, onClick = { range = i }, shape = SegmentedButtonDefaults.itemShape(i, 2)) { Text(label) }
                         }
                     }
@@ -119,52 +136,69 @@ fun StatsScreen(vm: AppViewModel, nav: Navigator) {
             item(key = "figures") {
                 Column(Modifier.cascade(1), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Figure("Intervalle moyen (7 j)", stats.averageIntervalMinutes?.let { PlanEngine.formatDuration(it) } ?: "—", Modifier.weight(1f))
-                        Figure("Plus long intervalle", if (stats.longestGapMinutes > 0) Fmt.duration(stats.longestGapMinutes * 60_000) else "—", Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_intervalle_moyen_7_j), stats.averageIntervalMinutes?.let { PlanEngine.formatDuration(it) } ?: "—", Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_plus_long_intervalle), if (stats.longestGapMinutes > 0) Fmt.duration(stats.longestGapMinutes * 60_000) else "—", Modifier.weight(1f))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Figure("Meilleure série sans fumer", "${stats.longestSmokeFreeDays} j", Modifier.weight(1f))
-                        Figure("Envies surmontées", "${stats.cravingsOvercome} / ${stats.cravingsTotal}", Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_meilleure_serie_sans_fumer), stringResource(R.string.components_j, stats.longestSmokeFreeDays), Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_envies_surmontees), "${stats.cravingsOvercome} / ${stats.cravingsTotal}", Modifier.weight(1f))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Figure("Cigarettes notées", Fmt.number(stats.total), Modifier.weight(1f))
-                        Figure("En avance", if (stats.total > 0) "${stats.earlyCount * 100 / stats.total} %" else "—", Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_bonus_tenu_au_dela_du), if (stats.bonusMinutes > 0) Fmt.duration(stats.bonusMinutes * 60_000L) else "—", Modifier.weight(1f))
+                        Figure(
+                            stringResource(R.string.stats_intensite_des_envies_debut_fin),
+                            if (stats.intensityStartAvg != null) "%.1f → %s".format(com.karelisio.exit.ui.components.Fmt.locale, stats.intensityStartAvg, stats.intensityEndAvg?.let { "%.1f".format(com.karelisio.exit.ui.components.Fmt.locale, it) } ?: "?") else "—",
+                            Modifier.weight(1f),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val delay = stats.morningDelay
+                        val prev = stats.previousMorningDelay
+                        Figure(
+                            stringResource(R.string.stats_premiere_du_matin_apres_le),
+                            delay?.let { PlanEngine.formatDuration(it) + (prev?.let { p -> (it - p).takeIf { d -> d != 0 }?.let { d -> if (d > 0) " (+$d)" else " ($d)" } } ?: "") } ?: "—",
+                            Modifier.weight(1f),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Figure(stringResource(R.string.stats_cigarettes_notees), Fmt.number(stats.total), Modifier.weight(1f))
+                        Figure(stringResource(R.string.stats_en_avance), if (stats.total > 0) "${stats.earlyCount * 100 / stats.total} %" else "—", Modifier.weight(1f))
                     }
                 }
             }
             item(key = "insight") { Insight(stats, Modifier.cascade(2)) }
             item(key = "hours") {
                 ExitCard(modifier = Modifier.cascade(3)) {
-                    Text("Heures les plus fréquentes", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.stats_heures_les_plus_frequentes), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
                     HourChart(stats.hours, stats.cravingHours, Modifier.fillMaxWidth().height(140.dp))
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        listOf("0 h", "6 h", "12 h", "18 h", "23 h").forEach {
+                        listOf(stringResource(R.string.stats_0_h), stringResource(R.string.stats_6_h), stringResource(R.string.stats_12_h), stringResource(R.string.stats_18_h), stringResource(R.string.stats_23_h)).forEach {
                             Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(Modifier.height(6.dp))
-                    Text("Barres : cigarettes · points : envies", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    Text(stringResource(R.string.stats_barres_cigarettes_points_envies), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 }
             }
             item(key = "triggers") {
                 ExitCard(modifier = Modifier.cascade(4)) {
-                    Text("Contextes à risque", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.stats_contextes_a_risque), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     if (stats.smokeTriggers.isEmpty() && stats.cravingTriggers.isEmpty()) {
                         Text(
-                            "Ajoute un contexte quand tu notes une cigarette ou une envie : Exit te montrera ici tes moments à risque.",
+                            stringResource(R.string.stats_ajoute_un_contexte_quand_tu),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         if (stats.smokeTriggers.isNotEmpty()) {
-                            SectionTitle("Cigarettes")
+                            SectionTitle(stringResource(R.string.stats_cigarettes))
                             TriggerBars(stats.smokeTriggers, MaterialTheme.colorScheme.primary)
                         }
                         if (stats.cravingTriggers.isNotEmpty()) {
-                            SectionTitle("Envies")
+                            SectionTitle(stringResource(R.string.stats_envies))
                             TriggerBars(stats.cravingTriggers, MaterialTheme.colorScheme.tertiary)
                         }
                     }
@@ -183,13 +217,13 @@ private fun Figure(label: String, value: String, modifier: Modifier = Modifier) 
 }
 
 private val TIPS = mapOf(
-    Trigger.CAFE to "Change un détail du rituel : autre tasse, autre endroit, un verre d'eau avant.",
-    Trigger.STRESS to "Le mode SOS et ses 5 minutes de respiration sont faits pour ces moments-là.",
-    Trigger.REPAS to "Après le repas, lève-toi tout de suite : vaisselle, petite marche, brossage de dents.",
-    Trigger.VOITURE to "Garde des chewing-gums dans la voiture et mets un podcast dès le démarrage.",
-    Trigger.ALCOOL to "L'alcool baisse la garde : prévois une boisson sans alcool sur deux.",
-    Trigger.ENNUI to "Prépare une liste de petites occupations de 5 minutes, à piocher.",
-    Trigger.PERSO to "Tu connais tes moments : anticipe-les avec une alternative prête.",
+    Trigger.CAFE to str(R.string.stats_change_un_detail_du_rituel),
+    Trigger.STRESS to str(R.string.stats_le_mode_sos_et_ses),
+    Trigger.REPAS to str(R.string.stats_apres_le_repas_leve_toi),
+    Trigger.VOITURE to str(R.string.stats_garde_des_chewing_gums_dans),
+    Trigger.ALCOOL to str(R.string.stats_l_alcool_baisse_la_garde),
+    Trigger.ENNUI to str(R.string.stats_prepare_une_liste_de_petites),
+    Trigger.PERSO to str(R.string.stats_tu_connais_tes_moments_anticipe),
 )
 
 @Composable
@@ -202,8 +236,8 @@ private fun Insight(stats: StatsSummary, modifier: Modifier = Modifier) {
             ShapeIcon(Icons.Rounded.Lightbulb, MaterialShapes.Sunny, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.onTertiary, size = 40.dp)
             Spacer(Modifier.width(14.dp))
             Column {
-                Text("Ton moment à risque", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                val parts = listOfNotNull(hour?.let { "vers $it h" }, trigger?.let { "souvent avec « ${it.label.lowercase()} » ${it.emoji}" })
+                Text(stringResource(R.string.stats_ton_moment_a_risque), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                val parts = listOfNotNull(hour?.let { stringResource(R.string.stats_vers_h, it) }, trigger?.let { stringResource(R.string.stats_souvent_avec, it.label.lowercase(), it.emoji) })
                 Text(parts.joinToString(", ").replaceFirstChar { it.uppercase() } + ".", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onTertiaryContainer)
                 trigger?.let { TIPS[it] }?.let {
                     Spacer(Modifier.height(6.dp))
@@ -234,7 +268,8 @@ private fun BarChart(values: List<Int>, labels: List<String>, target: List<Float
     val dash = MaterialTheme.colorScheme.outline
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val max = maxOf(values.maxOrNull() ?: 0, target.filterNotNull().maxOrNull()?.toInt() ?: 0, 1)
-    Column(modifier) {
+    val summary = labels.zip(values).joinToString(", ") { (l, v) -> "$l : $v" }
+    Column(modifier.semantics { contentDescription = str(R.string.stats_cigarettes_par_periode, summary) }) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Canvas(Modifier.matchParentSize()) {
                 val n = values.size.coerceAtLeast(1)
@@ -285,7 +320,7 @@ private fun HourChart(hours: IntArray, cravings: IntArray, modifier: Modifier = 
     val tertiary = MaterialTheme.colorScheme.tertiary
     val maxH = maxOf(hours.maxOrNull() ?: 0, cravings.maxOrNull() ?: 0, 1)
     val top = hours.withIndex().maxByOrNull { it.value }?.takeIf { it.value > 0 }?.index
-    Canvas(modifier) {
+    Canvas(modifier.semantics { contentDescription = top?.let { str(R.string.stats_heure_la_plus_frequente_h, it, hours[it]) } ?: str(R.string.stats_pas_encore_de_donnees) }) {
         val slot = size.width / 24
         val barW = slot * 0.7f
         hours.forEachIndexed { i, v ->

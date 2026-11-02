@@ -104,6 +104,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
     implementation(libs.androidx.graphics.shapes)
+    implementation(libs.androidx.profileinstaller)
+    implementation(libs.androidx.documentfile)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.androidx.core.ktx)

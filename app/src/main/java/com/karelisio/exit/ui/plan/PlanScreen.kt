@@ -1,5 +1,9 @@
 package com.karelisio.exit.ui.plan
 
+import androidx.compose.ui.res.pluralStringResource
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -68,6 +72,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.data.ConfigEntity
 import com.karelisio.exit.data.PlanEventEntity
@@ -116,7 +122,7 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection).sharedContainer("plan"),
         contentWindowInsets = WindowInsets.navigationBars,
-        topBar = { ExitTopBar("Ton plan", scroll, onBack = { nav.back() }) },
+        topBar = { ExitTopBar(stringResource(R.string.plan_ton_plan), scroll, onBack = { nav.back() }) },
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 32.dp),
@@ -126,26 +132,26 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                 ExitCard(color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.cascade(0)) {
                     val onColor = MaterialTheme.colorScheme.onPrimaryContainer
                     val title = when {
-                        snapshot.phase == Phase.QUIT -> "Arrêt complet"
-                        c.quitEpochDay != null -> "Objectif : arrêt le ${Fmt.dayFull(LocalDate.ofEpochDay(c.quitEpochDay))}"
-                        else -> "On espace d'abord"
+                        snapshot.phase == Phase.QUIT -> stringResource(R.string.plan_arret_complet)
+                        c.quitEpochDay != null -> stringResource(R.string.plan_objectif_arret_le, Fmt.dayFull(LocalDate.ofEpochDay(c.quitEpochDay)))
+                        else -> stringResource(R.string.plan_on_espace_d_abord)
                     }
                     Text(title, style = MaterialTheme.typography.headlineSmall, color = onColor)
                     Spacer(Modifier.height(8.dp))
                     val lines = buildList {
                         if (snapshot.phase == Phase.SPACING) {
-                            add("Intervalle aujourd'hui : ${PlanEngine.formatDuration(snapshot.intervalMinutes)}")
-                            add("Objectif du jour : ≈ ${ceil(snapshot.targetToday).toInt()} cigarette${if (snapshot.targetToday > 1) "s" else ""}")
+                            add(stringResource(R.string.plan_intervalle_aujourd_hui, PlanEngine.formatDuration(snapshot.intervalMinutes)))
+                            add(ceil(snapshot.targetToday).toInt().let { pluralStringResource(R.plurals.plan_target_today, it, it) })
                             if (c.quitEpochDay == null) {
-                                add("+${c.stepMinutes} min ${if (PlanEngine.stepPeriod(c) == StepPeriod.WEEK) "chaque semaine" else "chaque jour"}")
-                                snapshot.projectedQuitDay?.let { add("Zéro estimé vers le ${Fmt.dayFull(it)}") }
+                                add(stringResource(R.string.plan_min, c.stepMinutes, if (PlanEngine.stepPeriod(c) == StepPeriod.WEEK) "chaque semaine" else "chaque jour"))
+                                snapshot.projectedQuitDay?.let { add(stringResource(R.string.plan_zero_estime_vers_le, Fmt.dayFull(it))) }
                             } else {
                                 val left = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.ofEpochDay(c.quitEpochDay))
-                                add(if (left > 0) "Encore $left jour${if (left > 1) "s" else ""}, à ton rythme" else "C'est le moment : tu peux passer à l'arrêt complet")
+                                add(if (left > 0) pluralStringResource(R.plurals.plan_days_left, left.toInt(), left.toInt()) else stringResource(R.string.plan_c_est_le_moment_tu))
                             }
                         } else {
-                            c.quitStartedAt?.let { add("Depuis le ${Fmt.dayFull(PlanEngine.day(it, zone))}") }
-                            add("Le plan reste là si tu as besoin de revenir à l'espacement.")
+                            c.quitStartedAt?.let { add(stringResource(R.string.plan_depuis_le, Fmt.dayFull(PlanEngine.day(it, zone)))) }
+                            add(stringResource(R.string.plan_le_plan_reste_la_si))
                         }
                     }
                     lines.forEach { Text(it, style = MaterialTheme.typography.bodyLarge, color = onColor) }
@@ -154,7 +160,7 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
             if (snapshot.phase == Phase.SPACING) {
                 item(key = "chart") {
                     ExitCard(modifier = Modifier.cascade(1)) {
-                        Text("Courbe de réduction", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.plan_courbe_de_reduction), style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(4.dp))
                         Legend()
                         Spacer(Modifier.height(12.dp))
@@ -166,29 +172,29 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             ShapeIcon(Icons.Rounded.Tune, MaterialShapes.Cookie6Sided, MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, size = 40.dp)
                             Spacer(Modifier.width(12.dp))
-                            Text("Ajuster à ta façon", style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.plan_ajuster_a_ta_facon), style = MaterialTheme.typography.titleMedium)
                         }
                         Spacer(Modifier.height(12.dp))
-                        StatLine("Intervalle", PlanEngine.formatDuration(snapshot.intervalMinutes))
+                        StatLine(stringResource(R.string.plan_intervalle), PlanEngine.formatDuration(snapshot.intervalMinutes))
                         if (c.manualOffsetMinutes != 0) {
                             Text(
-                                "dont ${if (c.manualOffsetMinutes > 0) "+" else "−"}${PlanEngine.formatDuration(kotlin.math.abs(c.manualOffsetMinutes))} ajusté à la main",
+                                stringResource(R.string.plan_dont_ajuste_a_la_main, if (c.manualOffsetMinutes > 0) "+" else "−", PlanEngine.formatDuration(kotlin.math.abs(c.manualOffsetMinutes))),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledTonalButton(onClick = { haptics.tick(); vm.adjustOffset(-15) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) { Text("− 15 min") }
-                            FilledTonalButton(onClick = { haptics.tick(); vm.adjustOffset(15) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) { Text("+ 15 min") }
+                            FilledTonalButton(onClick = { haptics.tick(); vm.adjustOffset(-15) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.plan_15_min)) }
+                            FilledTonalButton(onClick = { haptics.tick(); vm.adjustOffset(15) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.weight(1f)) { Text(stringResource(R.string.plan_15_min_2)) }
                         }
 
                         Spacer(Modifier.height(18.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("Date d'arrêt", style = MaterialTheme.typography.titleSmall)
+                                Text(stringResource(R.string.plan_date_d_arret), style = MaterialTheme.typography.titleSmall)
                                 Text(
-                                    c.quitEpochDay?.let { Fmt.dayFull(LocalDate.ofEpochDay(it)) } ?: "Pas de date : on espace d'abord",
+                                    c.quitEpochDay?.let { Fmt.dayFull(LocalDate.ofEpochDay(it)) } ?: stringResource(R.string.plan_pas_de_date_on_espace),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -200,12 +206,12 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                         if (c.quitEpochDay != null) {
                             TextButton(onClick = { pickDate = true }) {
                                 Icon(Icons.Rounded.CalendarMonth, contentDescription = null)
-                                Text("  Changer la date")
+                                Text(stringResource(R.string.plan_changer_la_date))
                             }
                         }
 
                         Spacer(Modifier.height(12.dp))
-                        Text("Paliers", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.plan_paliers), style = MaterialTheme.typography.titleSmall)
                         Spacer(Modifier.height(6.dp))
                         val period = PlanEngine.stepPeriod(c)
                         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -214,13 +220,13 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                                     selected = period == p,
                                     onClick = { vm.setStep(p, c.stepMinutes) },
                                     shape = SegmentedButtonDefaults.itemShape(i, 2),
-                                ) { Text(if (p == StepPeriod.DAY) "Chaque jour" else "Chaque semaine") }
+                                ) { Text(if (p == StepPeriod.DAY) stringResource(R.string.plan_chaque_jour) else stringResource(R.string.plan_chaque_semaine)) }
                             }
                         }
                         if (c.quitEpochDay == null) {
                             Spacer(Modifier.height(12.dp))
                             var step by remember(c.stepMinutes) { mutableFloatStateOf(c.stepMinutes.toFloat()) }
-                            Text("+${step.roundToInt()} min par palier", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.plan_min_par_palier, step.roundToInt()), style = MaterialTheme.typography.bodyLarge)
                             Slider(
                                 value = step,
                                 onValueChange = { step = it },
@@ -232,10 +238,10 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(onClick = { haptics.confirm(); vm.recalculateFromToday() }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Rounded.Refresh, contentDescription = null)
-                            Text("  Recalculer depuis aujourd'hui")
+                            Text(stringResource(R.string.plan_recalculer_depuis_aujourd_hui))
                         }
                         Text(
-                            "Repart de ta consommation réelle des 3 derniers jours, sans rien effacer.",
+                            stringResource(R.string.plan_repart_de_ta_consommation_reelle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
@@ -245,19 +251,19 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                 item(key = "quit") {
                     Button(onClick = { confirmQuit = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(60.dp).cascade(3)) {
                         Icon(Icons.Rounded.Flag, contentDescription = null)
-                        Text("  Passer à l'arrêt complet", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.plan_passer_a_l_arret_complet), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             } else {
                 item(key = "resume") {
                     OutlinedButton(onClick = { confirmResume = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().cascade(1)) {
                         Icon(Icons.Rounded.Restore, contentDescription = null)
-                        Text("  Revenir au plan d'espacement")
+                        Text(stringResource(R.string.plan_revenir_au_plan_d_espacement))
                     }
                 }
             }
             if (d.events.isNotEmpty()) {
-                item(key = "journalTitle") { SectionTitle("Journal du plan") }
+                item(key = str(R.string.plan_journaltitle)) { SectionTitle(stringResource(R.string.plan_journal_du_plan)) }
                 items(d.events.take(40), key = { "e-${it.id}" }) { event -> EventRow(event, Modifier.animateItem()) }
             }
         }
@@ -278,39 +284,39 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { vm.setQuitDay(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
                     pickDate = false
-                }) { Text("OK") }
+                }) { Text(stringResource(android.R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickDate = false }) { Text("Annuler") } },
-        ) { DatePicker(state, title = { Text("Date d'arrêt", modifier = Modifier.padding(start = 24.dp, top = 16.dp)) }) }
+            dismissButton = { TextButton(onClick = { pickDate = false }) { Text(stringResource(R.string.history_annuler)) } },
+        ) { DatePicker(state, title = { Text(stringResource(R.string.plan_date_d_arret), modifier = Modifier.padding(start = 24.dp, top = 16.dp)) }) }
     }
     if (confirmQuit) {
         AlertDialog(
             onDismissRequest = { confirmQuit = false },
             icon = { Icon(Icons.Rounded.Flag, contentDescription = null) },
-            title = { Text("Passer à l'arrêt complet ?") },
-            text = { Text("Le minuteur laisse place au compteur de jours sans fumer. Si un écart arrive, rien n'est perdu.") },
+            title = { Text(stringResource(R.string.plan_passer_a_l_arret_complet_2)) },
+            text = { Text(stringResource(R.string.plan_le_minuteur_laisse_place_au)) },
             confirmButton = {
                 Button(onClick = {
                     confirmQuit = false
                     haptics.success()
                     vm.startQuit()
-                }) { Text("C'est parti") }
+                }) { Text(stringResource(R.string.plan_c_est_parti)) }
             },
-            dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Pas encore") } },
+            dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.plan_pas_encore)) } },
         )
     }
     if (confirmResume) {
         AlertDialog(
             onDismissRequest = { confirmResume = false },
-            title = { Text("Revenir à l'espacement ?") },
-            text = { Text("On repart en douceur avec un minuteur. Tes jours sans fumer, tes gains et tes badges restent acquis.") },
+            title = { Text(stringResource(R.string.plan_revenir_a_l_espacement)) },
+            text = { Text(stringResource(R.string.plan_on_repart_en_douceur_avec)) },
             confirmButton = {
                 Button(onClick = {
                     confirmResume = false
                     vm.resumePlanAfterSlip()
-                }) { Text("Revenir au plan") }
+                }) { Text(stringResource(R.string.plan_revenir_au_plan)) }
             },
-            dismissButton = { TextButton(onClick = { confirmResume = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { confirmResume = false }) { Text(stringResource(R.string.history_annuler)) } },
         )
     }
 }
@@ -321,9 +327,9 @@ private fun Legend() {
     val secondary = MaterialTheme.colorScheme.secondary
     Row(verticalAlignment = Alignment.CenterVertically) {
         Canvas(Modifier.size(18.dp, 10.dp)) { drawLine(primary, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), 3.dp.toPx(), StrokeCap.Round) }
-        Text("  prévu   ", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.plan_prevu), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Canvas(Modifier.size(10.dp)) { drawCircle(secondary) }
-        Text("  réel", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.plan_reel), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -346,7 +352,10 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
     val secondary = MaterialTheme.colorScheme.secondary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val todayColor = MaterialTheme.colorScheme.tertiary
-    Box(modifier) {
+    Box(modifier.semantics {
+        contentDescription = str(R.string.plan_courbe_de_reduction_objectif_de, (curve.firstOrNull()?.second ?: 0.0).roundToInt()) +
+            str(R.string.plan_zero_le, curve.lastOrNull()?.first?.let { Fmt.dayFull(it) } ?: "—")
+    }) {
         Canvas(Modifier.matchParentSize()) {
             val days = ChronoUnit.DAYS.between(start, end).coerceAtLeast(1).toFloat()
             val max = maxOf(curve.maxOfOrNull { it.second } ?: 1.0, (actual.values.maxOrNull() ?: 0).toDouble(), 1.0).toFloat() * 1.1f
@@ -378,7 +387,7 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
             }
         }
         Text(
-            "${(curve.maxOfOrNull { it.second } ?: 0.0).roundToInt()} / jour",
+            stringResource(R.string.plan_jour, (curve.maxOfOrNull { it.second } ?: 0.0).roundToInt()),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.TopStart),

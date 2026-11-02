@@ -1,5 +1,6 @@
 package com.karelisio.exit.system
 
+import com.karelisio.exit.str
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -14,29 +15,15 @@ import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.annotation.StringRes
+import com.karelisio.exit.R
 
 /** Autorisations demandées par Exit, une page chacune dans l'onboarding et dans les réglages. */
-enum class ExitPermission(val title: String, val rationale: String, val detail: String) {
-    NOTIFICATIONS(
-        "Notifications",
-        "Pour te prévenir quand la prochaine cigarette est « autorisée » et fêter chaque jalon santé.",
-        "Aucune publicité, aucun rappel culpabilisant : seulement l'essentiel, au bon moment.",
-    ),
-    EXACT_ALARMS(
-        "Alarmes exactes",
-        "Pour que la notification « c'est OK » arrive à la minute près, pas un quart d'heure plus tard.",
-        "Android limite les alarmes précises : Exit en programme au plus une à la fois.",
-    ),
-    BATTERY(
-        "Batterie sans restriction",
-        "Ton téléphone peut mettre Exit en veille forcée et faire sauter les rappels.",
-        "Sur Honor (MagicOS), autorise aussi Exit dans « Lancement d'applis » → Gérer manuellement.",
-    ),
-    INSTALL(
-        "Mises à jour",
-        "Pour installer les nouvelles versions d'Exit directement depuis l'appli.",
-        "Exit n'est pas sur le Play Store : les mises à jour viennent des releases GitHub, signées avec la même clé.",
-    ),
+enum class ExitPermission(@StringRes val titleRes: Int, @StringRes val rationaleRes: Int, @StringRes val detailRes: Int) {
+    NOTIFICATIONS(R.string.perm_notifications_title, R.string.perm_notifications_why, R.string.perm_notifications_detail),
+    EXACT_ALARMS(R.string.perm_exact_alarms_title, R.string.perm_exact_alarms_why, R.string.perm_exact_alarms_detail),
+    BATTERY(R.string.perm_battery_title, R.string.perm_battery_why, R.string.perm_battery_detail),
+    INSTALL(R.string.perm_install_title, R.string.perm_install_why, R.string.perm_install_detail),
 }
 
 object Permissions {
@@ -104,9 +91,9 @@ object Permissions {
     }
 
     private val LAUNCH_MANAGERS = listOf(
-        ComponentName("com.hihonor.systemmanager", "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
-        ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
-        ComponentName("com.hihonor.systemmanager", "com.hihonor.systemmanager.optimize.process.ProtectActivity"),
-        ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+        ComponentName("com.hihonor.systemmanager", str(R.string.system_com_hihonor_systemmanager_startupmgr_ui)),
+        ComponentName("com.huawei.systemmanager", str(R.string.system_com_huawei_systemmanager_startupmgr_ui)),
+        ComponentName("com.hihonor.systemmanager", str(R.string.system_com_hihonor_systemmanager_optimize_process)),
+        ComponentName("com.huawei.systemmanager", str(R.string.system_com_huawei_systemmanager_optimize_process)),
     )
 }

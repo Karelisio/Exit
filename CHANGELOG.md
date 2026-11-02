@@ -3,6 +3,22 @@
 Chaque section `## X.Y.Z` devient le texte de la release GitHub correspondante, affiché dans l'appli
 au moment de la mise à jour.
 
+## 1.1.0
+
+- Mes raisons d'arrêter : saisies à l'onboarding, rappelées dans le SOS et les notifications.
+- Intensité de l'envie (1 à 5) au début et à la fin du SOS, moyenne dans les stats.
+- « Bonus tenu » : le temps tenu au-delà du minuteur est compté et félicité.
+- Objectif « première du matin » : délai minimum après le réveil.
+- Sauvegarde automatique quotidienne dans un dossier au choix.
+- Tuiles des réglages rapides : « J'en fume une » et « SOS envie ».
+- Widget : anneau de progression autour du +1, nouveau widget SOS.
+- Bilan de la semaine (notification le dimanche à 18 h).
+- Objectif tirelire dans Progrès, badge « Tenace ».
+- Tous les textes regroupés dans les ressources Android, pluriels compris (prêts pour une traduction).
+- Démarrage plus fluide (profil de référence).
+- Accessibilité : titres de section annoncés, action « Supprimer » sans glisser dans l'historique,
+  états des jalons et badges lus par TalkBack, respiration annoncée, mise en page adaptée aux grandes polices.
+
 ## 1.0.0
 
 - Première version d'Exit : espacer les cigarettes, puis arrêter, sans culpabiliser.

@@ -1,5 +1,12 @@
 package com.karelisio.exit.ui.settings
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,7 +48,7 @@ fun PermissionsScreen(nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets.navigationBars,
-        topBar = { ExitTopBar("Autorisations", scroll, onBack = { nav.back() }) },
+        topBar = { ExitTopBar(stringResource(R.string.settings_autorisations), scroll, onBack = { nav.back() }) },
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
@@ -56,7 +63,7 @@ fun PermissionsScreen(nav: Navigator) {
                         Column(Modifier.weight(1f)) {
                             Text(p.title, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                if (granted) "Accordée" else "Non accordée",
+                                if (granted) stringResource(R.string.settings_accordee) else stringResource(R.string.settings_non_accordee),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             )
@@ -69,7 +76,7 @@ fun PermissionsScreen(nav: Navigator) {
                     if (p == ExitPermission.BATTERY && Permissions.isHonorOrHuawei) {
                         Spacer(Modifier.height(8.dp))
                         FilledTonalButton(onClick = { Permissions.openLaunchManager(context) }, shapes = ButtonDefaults.shapes()) {
-                            Text("Ouvrir « Lancement d'applis »")
+                            Text(stringResource(R.string.settings_ouvrir_lancement_d_applis))
                         }
                     }
                 }

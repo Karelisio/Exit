@@ -1,5 +1,14 @@
 package com.karelisio.exit.ui.onboarding
 
+import androidx.compose.ui.res.pluralStringResource
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -85,6 +94,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import com.karelisio.exit.domain.StepPeriod
@@ -111,7 +124,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-private enum class Page { WELCOME, SPACING, SOS, CONSUMPTION, GOAL, NOTIFICATIONS, ALARMS, BATTERY, INSTALL, READY }
+private enum class Page { WELCOME, SPACING, SOS, CONSUMPTION, GOAL, REASONS, NOTIFICATIONS, ALARMS, BATTERY, INSTALL, READY }
 
 private val Page.permission: ExitPermission?
     get() = when (this) {
@@ -141,20 +154,21 @@ fun OnboardingScreen(vm: AppViewModel) {
     var quitEpochDay by rememberSaveable { mutableStateOf(LocalDate.now().plusDays(42).toEpochDay()) }
     var step by rememberSaveable { mutableStateOf(StepPeriod.DAY) }
     var stepMinutes by rememberSaveable { mutableIntStateOf(5) }
+    var reasons by rememberSaveable { mutableStateOf("") }
     val priceValue = price.replace(',', '.').toDoubleOrNull()
 
     val current = pages[pager.currentPage]
     val canGoOn = current != Page.CONSUMPTION || (priceValue != null && priceValue in 0.0..100.0)
     val finish = {
         haptics.success()
-        vm.completeOnboarding(cigsPerDay, priceValue ?: 13.0, perPack, if (hasDate) LocalDate.ofEpochDay(quitEpochDay) else null, step, stepMinutes)
+        vm.completeOnboarding(cigsPerDay, priceValue ?: 13.0, perPack, if (hasDate) LocalDate.ofEpochDay(quitEpochDay) else null, step, stepMinutes, reasons)
     }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).systemBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             AnimatedVisibility(current.permission != null && !permissions.isGranted(current.permission!!), enter = fadeIn(), exit = fadeOut()) {
-                TextButton(onClick = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }) { Text("Plus tard") }
+                TextButton(onClick = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }) { Text(stringResource(R.string.update_plus_tard)) }
             }
         }
         HorizontalPager(
@@ -177,18 +191,18 @@ fun OnboardingScreen(vm: AppViewModel) {
                 when (page) {
                     Page.WELCOME -> Intro(
                         illustration = { ExitLogo(Modifier.size(240.dp)) },
-                        title = "Exit",
-                        body = "Espacer les cigarettes, puis arrêter.\nÀ ton rythme, sans culpabiliser.",
+                        title = stringResource(R.string.settings_exit),
+                        body = stringResource(R.string.onboarding_espacer_les_cigarettes_puis_arreter),
                     )
                     Page.SPACING -> Intro(
                         illustration = { DemoRing() },
-                        title = "Un minuteur doux",
-                        body = "Entre deux cigarettes, un intervalle minimum qui s'allonge petit à petit. Tu peux fumer avant : c'est simplement noté, jamais bloqué.",
+                        title = stringResource(R.string.onboarding_un_minuteur_doux),
+                        body = stringResource(R.string.onboarding_entre_deux_cigarettes_un_intervalle),
                     )
                     Page.SOS -> Intro(
                         illustration = { DemoBreathing() },
-                        title = "Une envie passe",
-                        body = "Elle dure 3 à 5 minutes. Le mode SOS t'accompagne avec une respiration guidée et une petite distraction. Chaque victoire est célébrée.",
+                        title = stringResource(R.string.onboarding_une_envie_passe),
+                        body = stringResource(R.string.onboarding_elle_dure_3_a_5),
                     )
                     Page.CONSUMPTION -> Consumption(
                         cigsPerDay, { cigsPerDay = it.coerceIn(1, 80) },
@@ -202,6 +216,7 @@ fun OnboardingScreen(vm: AppViewModel) {
                         step, { step = it },
                         stepMinutes, { stepMinutes = it },
                     )
+                    Page.REASONS -> Reasons(reasons) { reasons = it }
                     Page.NOTIFICATIONS, Page.ALARMS, Page.BATTERY, Page.INSTALL -> {
                         val p = page.permission!!
                         PermissionPage(p, permissions.isGranted(p), onRequest = { permissions.request(p) })
@@ -226,7 +241,7 @@ fun OnboardingScreen(vm: AppViewModel) {
                 modifier = Modifier.height(56.dp),
             ) {
                 AnimatedContent(last, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "next") { l ->
-                    Text(if (l) "C'est parti" else "Suivant", style = MaterialTheme.typography.titleMedium)
+                    Text(if (l) stringResource(R.string.plan_c_est_parti) else stringResource(R.string.onboarding_suivant), style = MaterialTheme.typography.titleMedium)
                 }
             }
         }
@@ -235,7 +250,7 @@ fun OnboardingScreen(vm: AppViewModel) {
 
 @Composable
 private fun Indicator(count: Int, current: Int, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.clearAndSetSemantics { contentDescription = str(R.string.onboarding_page_sur, current + 1, count) }, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(count) { i ->
             val width by animateDpAsState(if (i == current) 24.dp else 8.dp, spring(dampingRatio = 0.6f, stiffness = 400f), label = "dot")
             val color by animateColorAsState(if (i == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, label = "dotColor")
@@ -268,7 +283,7 @@ private fun DemoRing() {
     val p = if (reduce) 0.65f else t.coerceAtMost(1f)
     TimerRing(progress = p, ok = p >= 1f, modifier = Modifier.size(260.dp)) {
         Text(
-            if (p >= 1f) "C'est OK" else Fmt.countdown(((1f - p) * 90 * 60_000).toLong()),
+            if (p >= 1f) stringResource(R.string.home_c_est_ok) else Fmt.countdown(((1f - p) * 90 * 60_000).toLong()),
             style = MaterialTheme.typography.headlineLarge.copy(fontFeatureSettings = "tnum"),
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
@@ -307,15 +322,15 @@ private fun Consumption(
     priceValue: Double?,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
-        PageTitle("Ta consommation", "Une moyenne honnête suffit. Tu pourras tout changer plus tard.")
-        Stepper("Cigarettes par jour", cigsPerDay, onCigs, MaterialShapes.Cookie9Sided)
+        PageTitle(stringResource(R.string.onboarding_ta_consommation), stringResource(R.string.onboarding_une_moyenne_honnete_suffit_tu))
+        Stepper(stringResource(R.string.settings_cigarettes_par_jour), cigsPerDay, onCigs, MaterialShapes.Cookie9Sided)
         Spacer(Modifier.height(16.dp))
-        Stepper("Cigarettes par paquet", perPack, onPerPack, MaterialShapes.Clover4Leaf)
+        Stepper(stringResource(R.string.settings_cigarettes_par_paquet), perPack, onPerPack, MaterialShapes.Clover4Leaf)
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
             value = price,
             onValueChange = { onPrice(it.filter { c -> c.isDigit() || c == ',' || c == '.' }.take(6)) },
-            label = { Text("Prix du paquet (€)") },
+            label = { Text(stringResource(R.string.settings_prix_du_paquet_2)) },
             isError = priceValue == null,
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -325,14 +340,14 @@ private fun Consumption(
         if (priceValue != null && perPack > 0) {
             Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
-                    Text("Aujourd'hui, ça représente", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(stringResource(R.string.onboarding_aujourd_hui_ca_represente), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     CountUpText(
                         cigsPerDay * 365.0 * priceValue / perPack,
-                        { "${Fmt.money(it)} par an" },
+                        { str(R.string.onboarding_par_an, Fmt.money(it)) },
                         MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
-                    Text("Chaque cigarette évitée t'en rend une partie.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(stringResource(R.string.onboarding_chaque_cigarette_evitee_t_en), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
         }
@@ -345,12 +360,12 @@ private fun Stepper(label: String, value: Int, onChange: (Int) -> Unit, shape: R
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value - 1) }) { Icon(Icons.Rounded.Remove, contentDescription = "Moins") }
+            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value - 1) }) { Icon(Icons.Rounded.Remove, contentDescription = stringResource(R.string.onboarding_moins, label)) }
             Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
                 ShapeIcon(Icons.Rounded.Add, shape, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer, size = 60.dp)
                 AnimatedCounter(value.toString(), MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value + 1) }) { Icon(Icons.Rounded.Add, contentDescription = "Plus") }
+            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value + 1) }) { Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.onboarding_plus, label)) }
         }
     }
 }
@@ -364,18 +379,18 @@ private fun Goal(
 ) {
     var pick by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
-        PageTitle("Ton objectif", "Une date motive certains, d'autres préfèrent d'abord espacer. Les deux marchent.")
+        PageTitle(stringResource(R.string.onboarding_ton_objectif), stringResource(R.string.onboarding_une_date_motive_certains_d))
         Choice(
             selected = hasDate,
             icon = Icons.Rounded.CalendarMonth,
             shape = MaterialShapes.Cookie12Sided,
-            title = "Choisir une date d'arrêt",
-            body = "Exit calcule la courbe de réduction jusqu'à ce jour et l'ajuste si besoin.",
+            title = stringResource(R.string.onboarding_choisir_une_date_d_arret),
+            body = stringResource(R.string.onboarding_exit_calcule_la_courbe_de),
             onClick = { onHasDate(true) },
         )
         AnimatedVisibility(hasDate, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             FilledTonalButton(onClick = { pick = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("Arrêt le ${Fmt.dayFull(LocalDate.ofEpochDay(quitEpochDay))}")
+                Text(stringResource(R.string.home_arret_le, Fmt.dayFull(LocalDate.ofEpochDay(quitEpochDay))))
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -383,23 +398,23 @@ private fun Goal(
             selected = !hasDate,
             icon = Icons.Rounded.Timelapse,
             shape = MaterialShapes.Flower,
-            title = "Pas de date, on espace d'abord",
-            body = "L'intervalle entre deux cigarettes augmente un peu à chaque palier.",
+            title = stringResource(R.string.onboarding_pas_de_date_on_espace),
+            body = stringResource(R.string.onboarding_l_intervalle_entre_deux_cigarettes),
             onClick = { onHasDate(false) },
         )
         Spacer(Modifier.height(20.dp))
-        Text("Paliers", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.plan_paliers), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             StepPeriod.entries.forEachIndexed { i, p ->
                 SegmentedButton(selected = step == p, onClick = { onStep(p) }, shape = SegmentedButtonDefaults.itemShape(i, 2)) {
-                    Text(if (p == StepPeriod.DAY) "Chaque jour" else "Chaque semaine")
+                    Text(if (p == StepPeriod.DAY) stringResource(R.string.plan_chaque_jour) else stringResource(R.string.plan_chaque_semaine))
                 }
             }
         }
         AnimatedVisibility(!hasDate, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             Column(Modifier.padding(top = 12.dp)) {
-                Text("+$stepMinutes min par palier", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.plan_min_par_palier, stepMinutes), style = MaterialTheme.typography.bodyLarge)
                 Slider(stepMinutes.toFloat(), { onStepMinutes(it.roundToInt()) }, valueRange = 1f..60f, steps = 58)
             }
         }
@@ -419,10 +434,46 @@ private fun Goal(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { onQuitDay(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toEpochDay()) }
                     pick = false
-                }) { Text("OK") }
+                }) { Text(stringResource(android.R.string.ok)) }
             },
-            dismissButton = { TextButton(onClick = { pick = false }) { Text("Annuler") } },
+            dismissButton = { TextButton(onClick = { pick = false }) { Text(stringResource(R.string.history_annuler)) } },
         ) { DatePicker(state) }
+    }
+}
+
+private val REASON_IDEAS = listOf(
+    str(R.string.onboarding_mieux_respirer), str(R.string.onboarding_ma_sante), str(R.string.onboarding_mes_proches), str(R.string.onboarding_economiser), str(R.string.onboarding_retrouver_le_gout_et_l),
+    str(R.string.onboarding_me_sentir_libre), str(R.string.onboarding_faire_du_sport), str(R.string.onboarding_montrer_l_exemple),
+)
+
+/** Mes raisons d'arrêter : rappelées dans le mode SOS et dans les notifications. */
+@Composable
+private fun Reasons(text: String, onChange: (String) -> Unit) {
+    val haptics = rememberHaptics()
+    val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
+        PageTitle(stringResource(R.string.onboarding_tes_raisons), stringResource(R.string.onboarding_pourquoi_tu_veux_arreter_exit))
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            REASON_IDEAS.forEach { idea ->
+                androidx.compose.material3.FilterChip(
+                    selected = idea in lines,
+                    onClick = {
+                        haptics.tick()
+                        onChange((if (idea in lines) lines - idea else lines + idea).joinToString(str(R.string.onboarding_n)))
+                    },
+                    label = { Text(idea) },
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = text,
+            onValueChange = { onChange(it.take(500)) },
+            label = { Text(stringResource(R.string.settings_une_raison_par_ligne)) },
+            minLines = 4,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -445,7 +496,7 @@ private fun Choice(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .border(2.dp, border, MaterialTheme.shapes.large)
-            .clickable {
+            .selectable(selected = selected, role = Role.RadioButton) {
                 haptics.tick()
                 onClick()
             },
@@ -506,7 +557,7 @@ private fun PermissionPage(permission: ExitPermission, granted: Boolean, onReque
         GrantButton(granted, onRequest)
         if (permission == ExitPermission.BATTERY && Permissions.isHonorOrHuawei) {
             Spacer(Modifier.height(8.dp))
-            TextButton(onClick = { Permissions.openLaunchManager(context) }) { Text("Ouvrir « Lancement d'applis »") }
+            TextButton(onClick = { Permissions.openLaunchManager(context) }) { Text(stringResource(R.string.settings_ouvrir_lancement_d_applis)) }
         }
     }
 }
@@ -529,11 +580,11 @@ private fun Ready(active: Boolean, cigsPerDay: Int, hasDate: Boolean, quitEpochD
                 )
                 ExitLogo(Modifier.size(150.dp))
             },
-            title = "Tout est prêt",
+            title = stringResource(R.string.onboarding_tout_est_pret),
             body = buildString {
-                append("On part de $cigsPerDay cigarettes par jour")
-                append(if (hasDate) ", jusqu'au ${Fmt.dayFull(LocalDate.ofEpochDay(quitEpochDay))}." else ", et on espace d'abord.")
-                append("\nAjoute le widget Exit sur ton écran d'accueil pour noter une cigarette en un geste.")
+                append(pluralStringResource(R.plurals.onboarding_start_from, cigsPerDay, cigsPerDay))
+                append(if (hasDate) stringResource(R.string.onboarding_jusqu_au, Fmt.dayFull(LocalDate.ofEpochDay(quitEpochDay))) else stringResource(R.string.onboarding_et_on_espace_d_abord))
+                append(stringResource(R.string.onboarding_najoute_le_widget_exit_sur))
             },
         )
         SmokeBurst(burst, Modifier.fillMaxSize())

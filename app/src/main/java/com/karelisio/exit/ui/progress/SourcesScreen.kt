@@ -1,5 +1,12 @@
 package com.karelisio.exit.ui.progress
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -37,7 +44,7 @@ fun SourcesScreen(nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets.navigationBars,
-        topBar = { ExitTopBar("Sources", scroll, onBack = { nav.back() }) },
+        topBar = { ExitTopBar(stringResource(R.string.progress_sources), scroll, onBack = { nav.back() }) },
     ) { padding ->
         LazyColumn(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),
@@ -45,11 +52,11 @@ fun SourcesScreen(nav: Navigator) {
         ) {
             item {
                 ExitCard(modifier = Modifier.cascade(0)) {
-                    Text("Jalons santé", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.progress_jalons_sante), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Les bénéfices de l'arrêt affichés dans Exit reprennent les informations publiées par Tabac info service " +
-                            "(Santé publique France et Assurance Maladie) et par l'Organisation mondiale de la santé.",
+                        stringResource(R.string.progress_les_benefices_de_l_arret) +
+                            stringResource(R.string.progress_sante_publique_france_et_assurance),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     HealthSource.entries.forEach { source ->
@@ -62,29 +69,29 @@ fun SourcesScreen(nav: Navigator) {
             }
             item {
                 ExitCard(modifier = Modifier.cascade(1)) {
-                    Text("Temps de vie regagné", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.progress_temps_de_vie_regagne), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Estimation moyenne d'environ 20 minutes d'espérance de vie par cigarette (Jackson S. et al., Addiction, 2025, " +
-                            "University College London). C'est un ordre de grandeur, pas une promesse individuelle.",
+                        stringResource(R.string.progress_estimation_moyenne_d_environ_20) +
+                            stringResource(R.string.progress_university_college_london_c_est),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
             item {
                 ExitCard(color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.cascade(2)) {
-                    Text("Besoin d'aide ?", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(stringResource(R.string.progress_besoin_d_aide), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Exit ne remplace pas un avis médical. Les tabacologues de Tabac info service répondent au 39 89 (service gratuit), " +
-                            "et ton médecin ou ton pharmacien peut t'accompagner, notamment avec des substituts nicotiniques remboursés.",
+                        stringResource(R.string.progress_exit_ne_remplace_pas_un) +
+                            stringResource(R.string.progress_et_ton_medecin_ou_ton),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Spacer(Modifier.height(10.dp))
                     FilledTonalButton(onClick = { uri.openUri("tel:3989") }, shapes = ButtonDefaults.shapes()) {
                         Icon(Icons.Rounded.Call, contentDescription = null)
-                        Text("  Appeler le 39 89")
+                        Text(stringResource(R.string.progress_appeler_le_39_89))
                     }
                 }
             }

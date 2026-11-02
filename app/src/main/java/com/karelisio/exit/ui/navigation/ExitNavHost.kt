@@ -62,6 +62,7 @@ class Navigator(private val nav: NavHostController) {
     fun settings() = nav.navigate(SettingsRoute) { launchSingleTop = true }
     fun permissions() = nav.navigate(PermissionsRoute) { launchSingleTop = true }
     fun sources() = nav.navigate(SourcesRoute) { launchSingleTop = true }
+    fun review() = nav.navigate(ReviewRoute) { launchSingleTop = true }
     fun tab(item: TopLevel) = nav.navigate(item.route) {
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -88,6 +89,7 @@ fun ExitNavHost(vm: AppViewModel, pendingDestination: String?, onDestinationHand
             MainActivity.DEST_SOS -> navigator.sos()
             MainActivity.DEST_PLAN -> navigator.plan()
             MainActivity.DEST_PROGRESS -> navigator.tab(TopLevel.PROGRESS)
+            MainActivity.DEST_REVIEW -> navigator.review()
             else -> Unit
         }
         if (pendingDestination != null) onDestinationHandled()
@@ -134,7 +136,7 @@ fun ExitNavHost(vm: AppViewModel, pendingDestination: String?, onDestinationHand
                                         navigator.tab(item)
                                     },
                                     icon = { Icon(if (selected) item.selectedIcon else item.icon, contentDescription = null) },
-                                    label = { Text(item.label) },
+                                    label = { Text(androidx.compose.ui.res.stringResource(item.labelRes)) },
                                 )
                             }
                         }
@@ -164,6 +166,7 @@ fun ExitNavHost(vm: AppViewModel, pendingDestination: String?, onDestinationHand
                         composable<SettingsRoute> { Scoped(this) { SettingsScreen(vm, navigator) } }
                         composable<PermissionsRoute> { Scoped(this) { PermissionsScreen(navigator) } }
                         composable<SourcesRoute> { Scoped(this) { SourcesScreen(navigator) } }
+                        composable<ReviewRoute> { Scoped(this) { com.karelisio.exit.ui.review.ReviewScreen(vm, navigator) } }
                     }
                 }
             }

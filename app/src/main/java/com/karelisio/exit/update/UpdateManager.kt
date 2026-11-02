@@ -1,5 +1,7 @@
 package com.karelisio.exit.update
 
+import com.karelisio.exit.str
+import com.karelisio.exit.R
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
@@ -141,7 +143,7 @@ class UpdateManager(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.w(TAG, "Vérification impossible", e)
+            Log.w(TAG, str(R.string.update_verification_impossible), e)
             _state.update { if (it == UpdateState.Checking) UpdateState.CheckFailed else it }
             return null
         }
@@ -172,8 +174,8 @@ class UpdateManager(
                 _state.value = UpdateState.Available(info)
                 throw e
             } catch (e: Exception) {
-                Log.w(TAG, "Mise à jour impossible", e)
-                _state.value = UpdateState.Failed(info, e.message ?: "Erreur inconnue")
+                Log.w(TAG, str(R.string.update_mise_a_jour_impossible), e)
+                _state.value = UpdateState.Failed(info, e.message ?: str(R.string.update_erreur_inconnue))
             }
         }
     }
@@ -186,16 +188,16 @@ class UpdateManager(
         val info = installing
         when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION ->
-                if (confirmation != null) _confirmation.value = confirmation else fail(info, "Confirmation impossible")
+                if (confirmation != null) _confirmation.value = confirmation else fail(info, str(R.string.update_confirmation_impossible))
             PackageInstaller.STATUS_SUCCESS -> {
                 installing = null
                 _state.value = UpdateState.UpToDate
             }
             PackageInstaller.STATUS_FAILURE_ABORTED -> _state.value = info?.let { UpdateState.Available(it) } ?: UpdateState.Idle
-            PackageInstaller.STATUS_FAILURE_CONFLICT -> fail(info, "Signature différente : désinstalle l'ancienne version (exporte une sauvegarde avant).")
-            PackageInstaller.STATUS_FAILURE_STORAGE -> fail(info, "Espace de stockage insuffisant.")
-            PackageInstaller.STATUS_FAILURE_BLOCKED -> fail(info, "Installation bloquée par le système.")
-            else -> fail(info, message ?: "Installation impossible.")
+            PackageInstaller.STATUS_FAILURE_CONFLICT -> fail(info, str(R.string.update_signature_differente_desinstalle_l_ancienne))
+            PackageInstaller.STATUS_FAILURE_STORAGE -> fail(info, str(R.string.update_espace_de_stockage_insuffisant))
+            PackageInstaller.STATUS_FAILURE_BLOCKED -> fail(info, str(R.string.update_installation_bloquee_par_le_systeme))
+            else -> fail(info, message ?: str(R.string.update_installation_impossible))
         }
     }
 
@@ -214,14 +216,14 @@ class UpdateManager(
     private suspend fun fetchLatest(): UpdateInfo? {
         val request = Request.Builder()
             .url("https://api.github.com/repos/$repo/releases/latest")
-            .header("Accept", "application/vnd.github+json")
+            .header("Accept", str(R.string.update_application_vnd_github_json))
             .header("X-GitHub-Api-Version", "2022-11-28")
             .build()
         val response = http.newCall(request).await()
         return withContext(Dispatchers.IO) {
             response.use {
                 if (it.code == 404) return@withContext null
-                if (!it.isSuccessful) throw IOException("HTTP ${it.code}")
+                if (!it.isSuccessful) throw IOException(str(R.string.update_http, it.code))
                 val release = json.decodeFromString(GithubRelease.serializer(), it.body.string())
                 if (release.draft || release.prerelease) return@withContext null
                 val apk = release.assets.firstOrNull { a -> a.name.endsWith(".apk") } ?: return@withContext null
@@ -242,9 +244,9 @@ class UpdateManager(
         val partial = File(folder, "exit-${info.version}.apk.part")
         val apk = File(folder, "exit-${info.version}.apk")
         http.newCall(Request.Builder().url(info.apkUrl).build()).await().use { response ->
-            if (!response.isSuccessful) throw IOException("Téléchargement impossible (HTTP ${response.code})")
+            if (!response.isSuccessful) throw IOException(str(R.string.update_telechargement_impossible_http, response.code))
             val total = info.size.takeIf { it > 0 } ?: response.body.contentLength()
-            val digest = MessageDigest.getInstance("SHA-256")
+            val digest = MessageDigest.getInstance(str(R.string.update_sha_256))
             var received = 0L
             var lastPercent = -1
             response.body.byteStream().use { input ->
@@ -267,17 +269,17 @@ class UpdateManager(
                     }
                 }
             }
-            if (info.size > 0 && received != info.size) throw IOException("Fichier incomplet")
+            if (info.size > 0 && received != info.size) throw IOException(str(R.string.update_fichier_incomplet))
             val hash = digest.digest().joinToString("") { "%02x".format(it) }
-            if (info.sha256 != null && hash != info.sha256) throw IOException("Empreinte SHA-256 invalide")
+            if (info.sha256 != null && hash != info.sha256) throw IOException(str(R.string.update_empreinte_sha_256_invalide))
         }
-        if (!partial.renameTo(apk)) throw IOException("Impossible d'enregistrer l'APK")
+        if (!partial.renameTo(apk)) throw IOException(str(R.string.update_impossible_d_enregistrer_l_apk))
         apk
     }
 
     private fun verify(apk: File) {
         val archive = context.packageManager.getPackageArchiveInfo(apk.path, PackageManager.PackageInfoFlags.of(0))
-        if (archive == null || archive.packageName != context.packageName) throw IOException("Ce fichier n'est pas une version d'Exit")
+        if (archive == null || archive.packageName != context.packageName) throw IOException(str(R.string.update_ce_fichier_n_est_pas))
     }
 
     private suspend fun commit(apk: File) = withContext(Dispatchers.IO) {

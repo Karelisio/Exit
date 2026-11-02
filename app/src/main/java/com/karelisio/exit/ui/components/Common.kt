@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.components
 
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -28,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.karelisio.exit.ui.navigation.sharedContainer
 
 /** Bouton SOS envie, présent sur tous les écrans principaux ; se transforme en écran SOS. */
@@ -41,7 +45,7 @@ fun SosFab(onClick: () -> Unit, modifier: Modifier = Modifier, expanded: Boolean
         },
         expanded = expanded,
         icon = { Icon(Icons.Rounded.Support, contentDescription = null) },
-        text = { Text("SOS envie") },
+        text = { Text(stringResource(R.string.components_sos_envie)) },
         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 3.dp),
@@ -57,10 +61,10 @@ fun ExitTopBar(
     actions: @Composable () -> Unit = {},
 ) {
     LargeTopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() }) },
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour") }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.components_retour)) }
             }
         },
         actions = { actions() },
@@ -78,7 +82,7 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+        modifier = modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp).semantics { heading() },
     )
 }
 

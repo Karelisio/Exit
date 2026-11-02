@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Locale des dates, nombres et montants : à adapter dans chaque traduction (values-xx). -->
+    <string name="format_locale" translatable="false">fr-FR</string>
+    <string name="adjust_message">Les derniers jours ont été plus chargés que prévu, et c\'est normal : une réduction n\'est jamais une ligne droite. On réajuste en douceur, environ %1$d par jour, une toutes les %2$s.</string>
+    <string name="adjust_message_pushed">La date d\'arrêt passe au %1$s pour garder un rythme tenable.</string>
+    <string name="nav_home">Accueil</string>
+    <string name="nav_history">Historique</string>
+    <string name="nav_progress">Progrès</string>
+    <string name="nav_stats">Stats</string>
+    <string name="history_craving_overcome">%1$s · surmontée</string>
+    <string name="history_craving_not">%1$s · pas cette fois</string>
+    <string name="review_less">%1$d %% de moins que la semaine d\'avant. Bravo !</string>
+    <string name="review_more">Un peu plus que la semaine d\'avant (+%1$d %%). Ça arrive : le plan s\'adapte, toi tu continues.</string>
+    <string name="progress_reached">atteint</string>
+    <string name="progress_badge_obtained">obtenu</string>
+    <string name="progress_next_percent">prochain jalon, %1$d %%</string>
+    <string name="update_downloading_percent">Téléchargement… %1$d %%</string>
+    <string name="notify_change_percent">" (%1$d %%)"</string>
+</resources>

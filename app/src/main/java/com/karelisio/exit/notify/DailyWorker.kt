@@ -17,8 +17,9 @@ class DailyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
     override suspend fun doWork(): Result {
         val container = applicationContext.appContainer
-        container.repository.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it.message) }
+        container.repository.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it) }
         container.refreshSchedules()
+        container.autoBackup.runIfDue()
         container.updates.checkInBackground()?.let { container.notifications.showUpdateAvailable(it.version) }
         return Result.success()
     }

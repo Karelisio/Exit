@@ -1,7 +1,11 @@
 package com.karelisio.exit.data
 
+import com.karelisio.exit.plural
 import androidx.room.withTransaction
+import com.karelisio.exit.R
+import com.karelisio.exit.str
 import com.karelisio.exit.domain.DAY_MS
+import com.karelisio.exit.domain.HOUR_MS
 import com.karelisio.exit.domain.HealthMilestones
 import com.karelisio.exit.domain.MINUTE_MS
 import com.karelisio.exit.domain.Phase
@@ -41,6 +45,10 @@ class ExitRepository(
 
     suspend fun config(): ConfigEntity = db.config().get() ?: ConfigEntity()
 
+    suspend fun allSmokes(): List<SmokeEntity> = db.smokes().all()
+
+    suspend fun allCravings(): List<CravingEntity> = db.cravings().all()
+
     private suspend fun changed() {
         onChanged?.invoke()
     }
@@ -67,6 +75,7 @@ class ExitRepository(
         quitDay: LocalDate?,
         stepPeriod: StepPeriod,
         stepMinutes: Int,
+        reasons: String = "",
     ) {
         val now = clock()
         val current = config()
@@ -84,9 +93,10 @@ class ExitRepository(
                 planAnchorPerDay = cigsPerDay.coerceIn(1, 80).toDouble(),
                 manualOffsetMinutes = 0,
                 phase = Phase.SPACING.name,
+                reasons = reasons.trim(),
             ),
         )
-        if (!current.onboardingDone) event(PlanEventType.START, "Début du plan : $cigsPerDay cigarettes par jour au départ.")
+        if (!current.onboardingDone) event(PlanEventType.START, plural(R.plurals.plan_start_message, cigsPerDay, cigsPerDay))
         changed()
     }
 
@@ -100,14 +110,18 @@ class ExitRepository(
     suspend fun logSmoke(at: Long = clock(), trigger: String? = null, note: String? = null): SmokeLogged {
         val c = config()
         val zone = zone()
-        val previous = db.smokes().all().firstOrNull { it.timestamp <= at }?.timestamp
-        val interval = PlanEngine.intervalMinutes(c, PlanEngine.day(at, zone), zone)
-        val next = previous?.plus(interval * MINUTE_MS)
+        val day = PlanEngine.day(at, zone)
+        val before = db.smokes().all().filter { it.timestamp <= at }
+        val previous = before.firstOrNull()?.timestamp
+        val countToday = before.count { PlanEngine.day(it.timestamp, zone) == day }
+        val next = PlanEngine.snapshot(c, previous, countToday, at, zone).nextAllowedAt
         val quit = PlanEngine.phase(c) == Phase.QUIT
         val early = !quit && next != null && at < next
-        val smoke = SmokeEntity(timestamp = at, early = early, trigger = trigger, note = note, slip = quit)
+        // Temps tenu au-delà de la fin du minuteur (les nuits ne comptent pas).
+        val bonus = if (!quit && next != null && at > next && at - next < 6 * HOUR_MS) ((at - next) / MINUTE_MS).toInt() else 0
+        val smoke = SmokeEntity(timestamp = at, early = early, trigger = trigger, note = note, slip = quit, bonusMinutes = bonus)
         val id = db.smokes().insert(smoke)
-        if (quit) event(PlanEventType.SLIP, "Un écart, noté sans jugement. Tout ce qui a été gagné reste acquis.", at)
+        if (quit) event(PlanEventType.SLIP, str(R.string.data_un_ecart_note_sans_jugement), at)
         changed()
         val minutesEarly = if (early) (((next ?: at) - at) / MINUTE_MS).toInt() else 0
         return SmokeLogged(smoke.copy(id = id), minutesEarly)
@@ -136,12 +150,22 @@ class ExitRepository(
 
     // --- Envies -------------------------------------------------------------------------------
 
-    suspend fun logCraving(overcome: Boolean, trigger: String?, note: String?, durationSeconds: Int): Long {
+    suspend fun logCraving(overcome: Boolean, trigger: String?, note: String?, durationSeconds: Int, intensityStart: Int? = null): Long {
         val id = db.cravings().insert(
-            CravingEntity(timestamp = clock(), overcome = overcome, trigger = trigger, note = note, durationSeconds = durationSeconds),
+            CravingEntity(
+                timestamp = clock(), overcome = overcome, trigger = trigger, note = note,
+                durationSeconds = durationSeconds, intensityStart = intensityStart,
+            ),
         )
         changed()
         return id
+    }
+
+    /** Intensité ressentie à la fin du SOS, enregistrée sur la dernière envie. */
+    suspend fun setLastCravingEndIntensity(value: Int) {
+        val last = db.cravings().last() ?: return
+        db.cravings().update(last.copy(intensityEnd = value.coerceIn(1, 5)))
+        changed()
     }
 
     suspend fun deleteCraving(craving: CravingEntity) {
@@ -152,12 +176,19 @@ class ExitRepository(
     // --- Plan ---------------------------------------------------------------------------------
 
     /** Vérifie un éventuel dérapage et réajuste le plan en douceur. Renvoie l'ajustement appliqué. */
-    suspend fun runDriftCheck(now: Long = clock()): PlanAdjustment? {
+    suspend fun runDriftCheck(now: Long = clock()): String? {
         val c = config()
         if (!c.onboardingDone) return null
         val zone = zone()
         val perDay = db.smokes().since(now - 5 * DAY_MS).groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount()
         val adjustment = PlanEngine.driftAdjustment(c, { perDay[it] ?: 0 }, now, zone) ?: return null
+        val message = buildString {
+            append(str(R.string.adjust_message, adjustment.anchorPerDay.roundToInt(), PlanEngine.formatDuration(adjustment.intervalMinutes)))
+            adjustment.pushedTo?.let {
+                append(' ')
+                append(str(R.string.adjust_message_pushed, it.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM"))))
+            }
+        }
         db.config().upsert(
             c.copy(
                 planAnchorAt = adjustment.anchorAt,
@@ -165,12 +196,12 @@ class ExitRepository(
                 quitEpochDay = adjustment.quitEpochDay,
                 manualOffsetMinutes = 0,
                 lastAutoAdjustAt = now,
-                adjustmentMessage = adjustment.message,
+                adjustmentMessage = message,
             ),
         )
-        event(PlanEventType.AUTO_ADJUST, adjustment.message, now)
+        event(PlanEventType.AUTO_ADJUST, message, now)
         changed()
-        return adjustment
+        return message
     }
 
     suspend fun dismissAdjustmentMessage() {
@@ -182,14 +213,14 @@ class ExitRepository(
         val offset = (c.manualOffsetMinutes + deltaMinutes).coerceIn(-240, 600)
         db.config().upsert(c.copy(manualOffsetMinutes = offset))
         val sign = if (deltaMinutes > 0) "+" else "−"
-        event(PlanEventType.MANUAL_ADJUST, "Intervalle ajusté à la main ($sign${kotlin.math.abs(deltaMinutes)} min).")
+        event(PlanEventType.MANUAL_ADJUST, str(R.string.data_intervalle_ajuste_a_la_main, sign, kotlin.math.abs(deltaMinutes)))
         changed()
     }
 
     suspend fun setQuitDay(day: LocalDate?) {
         val c = config()
         db.config().upsert(c.copy(quitEpochDay = day?.toEpochDay()))
-        event(PlanEventType.MANUAL_ADJUST, if (day == null) "Plus de date cible : on espace d'abord." else "Nouvelle date d'arrêt choisie.")
+        event(PlanEventType.MANUAL_ADJUST, if (day == null) str(R.string.data_plus_de_date_cible_on) else str(R.string.data_nouvelle_date_d_arret_choisie))
         changed()
     }
 
@@ -212,7 +243,7 @@ class ExitRepository(
                 manualOffsetMinutes = 0,
             ),
         )
-        event(PlanEventType.MANUAL_ADJUST, "Plan recalculé depuis aujourd'hui : environ ${perDay.roundToInt()} par jour.")
+        event(PlanEventType.MANUAL_ADJUST, str(R.string.data_plan_recalcule_depuis_aujourd_hui, perDay.roundToInt()))
         changed()
     }
 
@@ -237,7 +268,7 @@ class ExitRepository(
                 lastCelebratedMilestoneMinutes = HealthMilestones.reached(streakMinutes).lastOrNull()?.minutes ?: 0,
             ),
         )
-        event(PlanEventType.QUIT, "Arrêt complet : c'est parti !")
+        event(PlanEventType.QUIT, str(R.string.data_arret_complet_c_est_parti))
         changed()
     }
 
@@ -265,8 +296,13 @@ class ExitRepository(
                 lastCelebratedMilestoneMinutes = 0,
             ),
         )
-        event(PlanEventType.RESUME_PLAN, "On repart sur le plan, en douceur. L'historique et les gains sont conservés.")
+        event(PlanEventType.RESUME_PLAN, str(R.string.data_on_repart_sur_le_plan))
         changed()
+    }
+
+    /** Enregistre la date de la dernière sauvegarde automatique (sans replanifier quoi que ce soit). */
+    suspend fun markAutoBackup(at: Long) {
+        db.config().upsert(config().copy(lastAutoBackupAt = at))
     }
 
     suspend fun markMilestoneCelebrated(minutes: Long) {
@@ -289,7 +325,7 @@ class ExitRepository(
     /** Remplace toutes les données par celles de la sauvegarde. Lève une exception si le fichier est invalide. */
     suspend fun importJson(text: String): Backup {
         val backup = json.decodeFromString(Backup.serializer(), text)
-        require(backup.format == Backup.FORMAT) { "Format inconnu" }
+        require(backup.format == Backup.FORMAT) { str(R.string.data_format_inconnu) }
         db.withTransaction {
             db.smokes().clear()
             db.cravings().clear()
@@ -299,7 +335,7 @@ class ExitRepository(
             db.cravings().insertAll(backup.cravings)
             db.planEvents().insertAll(backup.planEvents)
         }
-        event(PlanEventType.IMPORT, "Sauvegarde restaurée.")
+        event(PlanEventType.IMPORT, str(R.string.data_sauvegarde_restauree))
         changed()
         return backup
     }

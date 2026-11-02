@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.components
 
+import com.karelisio.exit.str
+import com.karelisio.exit.R
 import com.karelisio.exit.domain.DAY_MS
 import com.karelisio.exit.domain.HOUR_MS
 import com.karelisio.exit.domain.MINUTE_MS
@@ -12,11 +14,12 @@ import java.util.Currency
 import java.util.Locale
 
 object Fmt {
-    private val locale = Locale.FRANCE
-    private val time = DateTimeFormatter.ofPattern("HH:mm", locale)
-    private val dayLong = DateTimeFormatter.ofPattern("EEEE d MMMM", locale)
-    private val dayShort = DateTimeFormatter.ofPattern("d MMM", locale)
-    private val dayFull = DateTimeFormatter.ofPattern("d MMMM yyyy", locale)
+    /** Locale des formats = langue des textes (ressource format_locale), pour éviter un mélange de langues. */
+    val locale: Locale get() = Locale.forLanguageTag(str(R.string.format_locale))
+    private val time get() = DateTimeFormatter.ofPattern("HH:mm", locale)
+    private val dayLong get() = DateTimeFormatter.ofPattern("EEEE d MMMM", locale)
+    private val dayShort get() = DateTimeFormatter.ofPattern("d MMM", locale)
+    private val dayFull get() = DateTimeFormatter.ofPattern("d MMMM yyyy", locale)
 
     fun money(value: Double): String = NumberFormat.getCurrencyInstance(locale).apply {
         currency = Currency.getInstance("EUR")
@@ -29,8 +32,8 @@ object Fmt {
     fun time(millis: Long): String = time.format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()))
 
     fun dayLabel(day: LocalDate, today: LocalDate = LocalDate.now()): String = when (day) {
-        today -> "Aujourd'hui"
-        today.minusDays(1) -> "Hier"
+        today -> str(R.string.components_aujourd_hui)
+        today.minusDays(1) -> str(R.string.components_hier)
         else -> dayLong.format(day).replaceFirstChar { it.uppercase() }
     }
 
@@ -59,9 +62,9 @@ object Fmt {
         val h = (millis % DAY_MS) / HOUR_MS
         val m = (millis % HOUR_MS) / MINUTE_MS
         return when {
-            d > 0 -> if (h > 0) "$d j $h h" else "$d j"
-            h > 0 -> if (m > 0) "$h h ${m.toString().padStart(2, '0')}" else "$h h"
-            else -> "$m min"
+            d > 0 -> if (h > 0) str(R.string.components_j_h, d, h) else str(R.string.components_j, d)
+            h > 0 -> if (m > 0) str(R.string.components_h, h, m.toString().padStart(2, '0')) else str(R.string.components_h_2, h)
+            else -> str(R.string.components_min, m)
         }
     }
 
@@ -71,15 +74,15 @@ object Fmt {
         val hours = (minutes % (24 * 60)) / 60
         val mins = minutes % 60
         return when {
-            days > 0 -> "$days j $hours h"
-            hours > 0 -> "$hours h ${mins.toString().padStart(2, '0')}"
-            else -> "$mins min"
+            days > 0 -> str(R.string.components_j_h, days, hours)
+            hours > 0 -> str(R.string.components_h, hours, mins.toString().padStart(2, '0'))
+            else -> str(R.string.components_min, mins)
         }
     }
 
     fun greeting(hour: Int): String = when (hour) {
-        in 5..11 -> "Bonjour"
-        in 12..17 -> "Bon après-midi"
-        else -> "Bonsoir"
+        in 5..11 -> str(R.string.components_bonjour)
+        in 12..17 -> str(R.string.components_bon_apres_midi)
+        else -> str(R.string.components_bonsoir)
     }
 }

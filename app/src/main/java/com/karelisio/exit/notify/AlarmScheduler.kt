@@ -55,6 +55,27 @@ class AlarmScheduler(private val context: Context) {
             }
         }
 
+        // Rafraîchit l'anneau de progression du widget tous les huitièmes de l'intervalle.
+        val tickIntent = pending(AlarmReceiver.ACTION_WIDGET_TICK, REQ_TICK)
+        alarmManager.cancel(tickIntent)
+        val last = snapshot.lastSmokeAt
+        if (snapshot.phase == Phase.SPACING && next != null && last != null && next > now) {
+            val step = ((next - last) / 8).coerceAtLeast(5 * MINUTE_MS)
+            val tick = generateSequence(last + step) { it + step }.first { it > now + MINUTE_MS }
+            if (tick < next) alarmManager.set(AlarmManager.RTC, tick, tickIntent)
+        }
+
+        // Bilan de la semaine : dimanche à 18 h.
+        if (config.onboardingDone) {
+            var sunday = PlanEngine.day(now, zone).with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY))
+            var at = sunday.atTime(18, 0).atZone(zone).toInstant().toEpochMilli()
+            if (at <= now) {
+                sunday = sunday.plusWeeks(1)
+                at = sunday.atTime(18, 0).atZone(zone).toInstant().toEpochMilli()
+            }
+            alarmManager.set(AlarmManager.RTC_WAKEUP, at, pending(AlarmReceiver.ACTION_WEEKLY, REQ_WEEKLY))
+        }
+
         val midnight = PlanEngine.startOfDay(PlanEngine.day(now, zone).plusDays(1), zone) + MINUTE_MS
         alarmManager.set(AlarmManager.RTC, midnight, pending(AlarmReceiver.ACTION_MIDNIGHT, REQ_MIDNIGHT))
     }
@@ -72,6 +93,8 @@ class AlarmScheduler(private val context: Context) {
         private const val REQ_NEXT = 100
         private const val REQ_MILESTONE = 101
         private const val REQ_MIDNIGHT = 102
+        private const val REQ_TICK = 103
+        private const val REQ_WEEKLY = 104
 
         /** Heure locale (minutes depuis minuit) d'un instant. */
         fun minuteOfDay(at: Long, zone: ZoneId = ZoneId.systemDefault()): Int {

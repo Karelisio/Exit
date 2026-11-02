@@ -23,6 +23,13 @@ data class StatsSummary(
     val cravingsTotal: Int,
     val earlyCount: Int,
     val total: Int,
+    /** Total du temps tenu au-delà du minuteur, en minutes. */
+    val bonusMinutes: Int = 0,
+    val intensityStartAvg: Double? = null,
+    val intensityEndAvg: Double? = null,
+    /** Délai moyen réveil → première cigarette (7 derniers jours, puis les 7 d'avant). */
+    val morningDelay: Int? = null,
+    val previousMorningDelay: Int? = null,
 ) {
     val riskHour: Int? get() = hours.withIndex().maxByOrNull { it.value }?.takeIf { it.value > 0 }?.index
     val riskTrigger: Trigger? get() = (smokeTriggers + cravingTriggers)
@@ -40,6 +47,7 @@ object StatsCalculator {
         zone: ZoneId,
         days: Int = 14,
         weeks: Int = 8,
+        wakeMinutes: Int = 7 * 60,
     ): StatsSummary {
         val today = PlanEngine.day(now, zone)
         val perDay = smokes.groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount()
@@ -69,7 +77,23 @@ object StatsCalculator {
             cravingsTotal = cravings.size,
             earlyCount = smokes.count { it.early },
             total = smokes.size,
+            bonusMinutes = smokes.sumOf { it.bonusMinutes },
+            intensityStartAvg = cravings.mapNotNull { it.intensityStart }.takeIf { it.isNotEmpty() }?.average(),
+            intensityEndAvg = cravings.mapNotNull { it.intensityEnd }.takeIf { it.isNotEmpty() }?.average(),
+            morningDelay = morningDelay(smokes, today.minusDays(6), today, wakeMinutes, zone),
+            previousMorningDelay = morningDelay(smokes, today.minusDays(13), today.minusDays(7), wakeMinutes, zone),
         )
+    }
+
+    /** Délai moyen (minutes) entre le réveil et la première cigarette, sur les jours [from, to] fumés. */
+    fun morningDelay(smokes: List<SmokeEntity>, from: LocalDate, to: LocalDate, wakeMinutes: Int, zone: ZoneId): Int? {
+        val firsts = smokes.groupBy { PlanEngine.day(it.timestamp, zone) }
+            .filterKeys { it in from..to }
+            .map { (day, list) ->
+                val first = list.minOf { it.timestamp }
+                ((first - PlanEngine.startOfDay(day, zone)) / MINUTE_MS - wakeMinutes).coerceAtLeast(0)
+            }
+        return firsts.takeIf { it.isNotEmpty() }?.average()?.toInt()
     }
 
     fun hourDistribution(timestamps: List<Long>, zone: ZoneId): IntArray {

@@ -1,5 +1,14 @@
 package com.karelisio.exit.ui.home
 
+import androidx.compose.ui.res.pluralStringResource
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -72,6 +81,8 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.data.ConfigEntity
@@ -138,7 +149,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
     LaunchedEffect(reached?.minutes, c.lastCelebratedMilestoneMinutes) {
         if (reached != null && reached.minutes > c.lastCelebratedMilestoneMinutes) {
             vm.markMilestoneCelebrated(reached.minutes)
-            celebration = "${reached.label} sans fumer · ${reached.title}"
+            celebration = str(R.string.home_sans_fumer, reached.label, reached.title)
             burst++
             haptics.success()
         }
@@ -160,7 +171,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
             contentWindowInsets = WindowInsets(0),
             topBar = {
                 ExitTopBar(Fmt.greeting(hour), scroll, actions = {
-                    IconButton(onClick = nav::settings) { Icon(Icons.Rounded.Settings, contentDescription = "Réglages") }
+                    IconButton(onClick = nav::settings) { Icon(Icons.Rounded.Settings, contentDescription = stringResource(R.string.settings_reglages)) }
                 })
             },
             floatingActionButton = { SosFab(nav::sos) },
@@ -180,6 +191,10 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             TimerHero(snapshot, now)
                             Spacer(Modifier.height(12.dp))
                             InfoPills(snapshot, todayCount)
+                            snapshot.morningGoalAt?.takeIf { it > now }?.let {
+                                Spacer(Modifier.height(8.dp))
+                                Pill(stringResource(R.string.home_premiere_du_matin_pas_avant, Fmt.time(it)))
+                            }
                             Spacer(Modifier.height(16.dp))
                             SmokeButton {
                                 haptics.confirm()
@@ -194,26 +209,35 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                         item(key = "ready") { ReadyToQuitCard(onQuit = { confirmQuit = true }, modifier = Modifier.cascade(2).animateItem()) }
                     }
                 } else {
-                    item(key = "quitHero") {
+                    item(key = str(R.string.home_quithero)) {
                         QuitHero(streakStart, now, onSlip = {
                             haptics.tick()
                             vm.logSmoke()
                         }, modifier = Modifier.cascade(1).animateItem())
                     }
                 }
+                val dow = LocalDate.now().dayOfWeek
+                if (dow == java.time.DayOfWeek.SUNDAY || dow == java.time.DayOfWeek.MONDAY) {
+                    item(key = "review") {
+                        ExitCard(color = MaterialTheme.colorScheme.tertiaryContainer, onClick = nav::review, modifier = Modifier.cascade(2).animateItem()) {
+                            Text(stringResource(R.string.home_ton_bilan_de_la_semaine), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                            Text(stringResource(R.string.home_envies_surmontees_bonus_tenu_economies), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        }
+                    }
+                }
                 item(key = "plan") { PlanCard(c, snapshot, d, onClick = nav::plan, modifier = Modifier.cascade(3).animateItem()) }
                 item(key = "gains") {
                     ExitCard(onClick = { nav.tab(TopLevel.PROGRESS) }, modifier = Modifier.cascade(4).animateItem()) {
-                        Text("Tes gains", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.home_tes_gains), style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(12.dp))
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            GainColumn("économisés") {
+                            GainColumn(stringResource(R.string.progress_economises)) {
                                 CountUpText(gains.money, Fmt::money, MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.primary)
                             }
-                            GainColumn("évitées") {
+                            GainColumn(stringResource(R.string.home_evitees)) {
                                 CountUpText(gains.avoided.toDouble(), { Fmt.number(it.toInt()) }, MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.secondary)
                             }
-                            GainColumn("de vie") {
+                            GainColumn(stringResource(R.string.home_de_vie)) {
                                 Text(Fmt.lifeTime(gains.lifeMinutes), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.tertiary)
                             }
                         }
@@ -221,7 +245,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                 }
                 if (snapshot.phase == Phase.SPACING && d.lastSmokeAt != null) {
                     item(key = "milestone") {
-                        NextMilestoneCard((now - d.lastSmokeAt!!) / MINUTE_MS, title = "Depuis ta dernière cigarette", modifier = Modifier.cascade(5).animateItem())
+                        NextMilestoneCard((now - d.lastSmokeAt!!) / MINUTE_MS, title = stringResource(R.string.home_depuis_ta_derniere_cigarette), modifier = Modifier.cascade(5).animateItem())
                     }
                 }
                 item(key = "cravings") {
@@ -233,13 +257,13 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    if (total == 0) "Une envie ? Le mode SOS t'aide à la laisser passer" else "$total envie${if (total > 1) "s" else ""} surmontée${if (total > 1) "s" else ""}",
+                                    if (total == 0) stringResource(R.string.home_une_envie_le_mode_sos) else pluralStringResource(R.plurals.cravings_overcome, total, total),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                                 if (total > 0) {
                                     Text(
-                                        "dont $week cette semaine. Chacune compte.",
+                                        stringResource(R.string.home_dont_cette_semaine_chacune_compte, week),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
@@ -281,16 +305,16 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
         AlertDialog(
             onDismissRequest = { confirmQuit = false },
             icon = { Icon(Icons.Rounded.Flag, contentDescription = null) },
-            title = { Text("Passer à l'arrêt complet ?") },
-            text = { Text("Le minuteur laisse place au compteur de jours sans fumer. Si un écart arrive, rien n'est perdu : on en parle, sans jugement.") },
+            title = { Text(stringResource(R.string.plan_passer_a_l_arret_complet_2)) },
+            text = { Text(stringResource(R.string.home_le_minuteur_laisse_place_au)) },
             confirmButton = {
                 Button(onClick = {
                     confirmQuit = false
                     haptics.success()
                     vm.startQuit()
-                }) { Text("C'est parti") }
+                }) { Text(stringResource(R.string.plan_c_est_parti)) }
             },
-            dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text("Pas encore") } },
+            dismissButton = { TextButton(onClick = { confirmQuit = false }) { Text(stringResource(R.string.plan_pas_encore)) } },
         )
     }
 }
@@ -301,7 +325,9 @@ private fun TimerHero(snapshot: PlanSnapshot, now: Long) {
     TimerRing(
         progress = snapshot.progress(now),
         ok = ok,
-        modifier = Modifier.fillMaxWidth(0.82f),
+        modifier = Modifier.fillMaxWidth(0.82f).clearAndSetSemantics {
+            contentDescription = if (ok) str(R.string.home_c_est_ok_si_tu) else str(R.string.home_prochaine_cigarette_autorisee_a, snapshot.nextAllowedAt?.let { Fmt.time(it) })
+        },
     ) {
         AnimatedContent(
             targetState = ok,
@@ -311,24 +337,24 @@ private fun TimerHero(snapshot: PlanSnapshot, now: Long) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isOk) {
                     Text(
-                        if (snapshot.lastSmokeAt == null) "Prêt·e" else "C'est OK",
+                        if (snapshot.lastSmokeAt == null) stringResource(R.string.home_prete) else stringResource(R.string.home_c_est_ok),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                     Text(
-                        if (snapshot.lastSmokeAt == null) "note ta prochaine cigarette" else "si tu en as besoin",
+                        if (snapshot.lastSmokeAt == null) stringResource(R.string.home_note_ta_prochaine_cigarette) else stringResource(R.string.home_si_tu_en_as_besoin),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                 } else {
-                    Text("prochaine dans", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text(stringResource(R.string.home_prochaine_dans), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     AnimatedCounter(
                         Fmt.countdown(snapshot.remainingMillis(now)),
                         style = MaterialTheme.typography.displayMedium.copy(fontFeatureSettings = "tnum"),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                     snapshot.nextAllowedAt?.let {
-                        Text("à ${Fmt.time(it)}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(stringResource(R.string.home_a, Fmt.time(it)), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
             }
@@ -338,10 +364,13 @@ private fun TimerHero(snapshot: PlanSnapshot, now: Long) {
 
 @Composable
 private fun InfoPills(snapshot: PlanSnapshot, todayCount: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Pill("Intervalle ${PlanEngine.formatDuration(snapshot.intervalMinutes)}")
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Pill(stringResource(R.string.home_intervalle, PlanEngine.formatDuration(snapshot.intervalMinutes)))
         val target = ceil(snapshot.targetToday).toInt()
-        Pill("Aujourd'hui $todayCount" + if (target > 0) " / $target" else "")
+        Pill(stringResource(R.string.home_aujourd_hui, todayCount) + if (target > 0) " / $target" else "")
     }
 }
 
@@ -362,7 +391,7 @@ private fun SmokeButton(onClick: () -> Unit) {
     ) {
         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(28.dp))
         Spacer(Modifier.width(12.dp))
-        Text("J'en fume une", style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.home_j_en_fume_une), style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -386,21 +415,23 @@ private fun LoggedCard(logged: SmokeLogged?, vm: AppViewModel, onClose: () -> Un
         ExitCard(color = MaterialTheme.colorScheme.surfaceContainerHigh) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Notée à ${Fmt.time(current.smoke.timestamp)}", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.home_notee_a, Fmt.time(current.smoke.timestamp)), style = MaterialTheme.typography.titleMedium)
                     Text(
                         if (current.minutesEarly > 0) {
-                            "${PlanEngine.formatDuration(current.minutesEarly)} en avance. Pas grave, on continue ensemble."
+                            stringResource(R.string.home_en_avance_pas_grave_on, PlanEngine.formatDuration(current.minutesEarly))
+                        } else if (current.smoke.bonusMinutes > 0) {
+                            stringResource(R.string.home_tu_as_tenu_de_plus, PlanEngine.formatDuration(current.smoke.bonusMinutes))
                         } else {
-                            "Merci de l'avoir notée. Le minuteur repart."
+                            stringResource(R.string.home_merci_de_l_avoir_notee)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = "Fermer") }
+                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.home_fermer)) }
             }
             Spacer(Modifier.height(10.dp))
-            Text("Un contexte ? (facultatif)", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.home_un_contexte_facultatif), style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(6.dp))
             TriggerChips(
                 selected = trigger,
@@ -427,11 +458,11 @@ private fun AdjustmentCard(message: String, onDismiss: () -> Unit, onOpen: () ->
             ShapeIcon(Icons.Rounded.Favorite, MaterialShapes.Heart, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.onTertiary, size = 40.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text("Plan réajusté en douceur", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                Text(stringResource(R.string.home_plan_reajuste_en_douceur), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
                 Spacer(Modifier.height(4.dp))
                 Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
-            IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = "Compris") }
+            IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.home_compris)) }
         }
     }
 }
@@ -439,15 +470,15 @@ private fun AdjustmentCard(message: String, onDismiss: () -> Unit, onOpen: () ->
 @Composable
 private fun ReadyToQuitCard(onQuit: () -> Unit, modifier: Modifier = Modifier) {
     ExitCard(color = MaterialTheme.colorScheme.primaryContainer, modifier = modifier) {
-        Text("Tu y es presque 🌱", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(stringResource(R.string.home_tu_y_es_presque), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
         Spacer(Modifier.height(6.dp))
         Text(
-            "Ton plan arrive à zéro. Quand tu te sens prêt·e, passe à l'arrêt complet : le compteur de jours sans fumer prend le relais.",
+            stringResource(R.string.home_ton_plan_arrive_a_zero),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
         Spacer(Modifier.height(12.dp))
-        Button(onClick = onQuit, shapes = ButtonDefaults.shapes()) { Text("Passer à l'arrêt complet") }
+        Button(onClick = onQuit, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.home_passer_a_l_arret_complet)) }
     }
 }
 
@@ -472,7 +503,7 @@ private fun QuitHero(streakStart: Long?, now: Long, onSlip: () -> Unit, modifier
                     style = MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(if (days <= 1) "jour sans fumer" else "jours sans fumer", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(pluralStringResource(R.plurals.days_smoke_free_label, days.toInt()), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(
                     "+ ${Fmt.clock(rest)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
@@ -481,9 +512,9 @@ private fun QuitHero(streakStart: Long?, now: Long, onSlip: () -> Unit, modifier
             }
         }
         Spacer(Modifier.height(12.dp))
-        NextMilestoneCard(elapsed / MINUTE_MS, title = "Ton corps se répare")
+        NextMilestoneCard(elapsed / MINUTE_MS, title = stringResource(R.string.home_ton_corps_se_repare))
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = onSlip, shapes = ButtonDefaults.shapes()) { Text("J'ai fumé une cigarette") }
+        OutlinedButton(onClick = onSlip, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.home_j_ai_fume_une_cigarette)) }
     }
 }
 
@@ -494,9 +525,9 @@ private fun NextMilestoneCard(minutes: Long, title: String, modifier: Modifier =
         Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         if (next == null) {
-            Text("Tous les jalons sont atteints. Respect.", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.home_tous_les_jalons_sont_atteints), style = MaterialTheme.typography.titleMedium)
         } else {
-            Text("Prochain jalon : ${next.label} · ${next.title}", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.home_prochain_jalon, next.label, next.title), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(10.dp))
             LinearWavyProgressIndicator(progress = { HealthMilestones.progressToNext(minutes) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
@@ -516,16 +547,16 @@ private fun PlanCard(c: ConfigEntity, snapshot: PlanSnapshot, d: AppData, onClic
             ShapeIcon(Icons.Rounded.Route, MaterialShapes.Pill, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer, size = 40.dp, rotationDeg = -30f)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text("Ton plan", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.plan_ton_plan), style = MaterialTheme.typography.titleMedium)
                 val today = LocalDate.now()
                 val subtitle = when {
-                    snapshot.phase == Phase.QUIT -> "Arrêt complet depuis le ${c.quitStartedAt?.let { Fmt.dayShort(PlanEngine.day(it, zone)) } ?: "—"}"
+                    snapshot.phase == Phase.QUIT -> stringResource(R.string.home_arret_complet_depuis_le, c.quitStartedAt?.let { Fmt.dayShort(PlanEngine.day(it, zone)) } ?: "—")
                     snapshot.quitDay != null -> {
                         val left = ChronoUnit.DAYS.between(today, snapshot.quitDay)
-                        "Arrêt le ${Fmt.dayShort(snapshot.quitDay)}" + if (left > 0) " · J-$left" else " · c'est le jour"
+                        stringResource(R.string.home_arret_le, Fmt.dayShort(snapshot.quitDay)) + if (left > 0) stringResource(R.string.home_j, left) else stringResource(R.string.home_c_est_le_jour)
                     }
-                    snapshot.projectedQuitDay != null -> "On espace d'abord · zéro vers le ${Fmt.dayShort(snapshot.projectedQuitDay)}"
-                    else -> "On espace d'abord"
+                    snapshot.projectedQuitDay != null -> stringResource(R.string.home_on_espace_d_abord_zero, Fmt.dayShort(snapshot.projectedQuitDay))
+                    else -> stringResource(R.string.plan_on_espace_d_abord)
                 }
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -572,11 +603,11 @@ private fun SlipSheet(slip: SmokeLogged, d: AppData, onDismiss: () -> Unit, vm: 
         Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             ShapeIcon(Icons.Rounded.Favorite, MaterialShapes.Heart, MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer, size = 72.dp)
             Spacer(Modifier.height(16.dp))
-            Text("Ça arrive. Ça ne t'enlève rien.", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.home_ca_arrive_ca_ne_t), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Tes ${gains.smokeFreeDays} jours sans fumer, tes ${Fmt.money(gains.money)} économisés et tes badges restent acquis. " +
-                    "Une cigarette n'efface pas le chemin parcouru. Comment veux-tu continuer ?",
+                pluralStringResource(R.plurals.slip_kept, gains.smokeFreeDays, gains.smokeFreeDays, Fmt.money(gains.money)) +
+                    stringResource(R.string.home_une_cigarette_n_efface_pas),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -585,17 +616,17 @@ private fun SlipSheet(slip: SmokeLogged, d: AppData, onDismiss: () -> Unit, vm: 
             Button(onClick = {
                 vm.continueQuitAfterSlip()
                 onDismiss()
-            }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Je continue mon arrêt") }
+            }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.home_je_continue_mon_arret)) }
             Spacer(Modifier.height(8.dp))
             FilledTonalButton(onClick = {
                 vm.resumePlanAfterSlip()
                 onDismiss()
-            }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Revenir au plan d'espacement") }
+            }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth().height(56.dp)) { Text(stringResource(R.string.home_revenir_au_plan_d_espacement)) }
             Spacer(Modifier.height(4.dp))
             TextButton(onClick = {
                 vm.deleteSmoke(slip.smoke)
                 onDismiss()
-            }) { Text("Je me suis trompé·e, annuler") }
+            }) { Text(stringResource(R.string.home_je_me_suis_trompee_annuler)) }
         }
     }
 }

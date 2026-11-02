@@ -1,5 +1,7 @@
 package com.karelisio.exit.widget
 
+import com.karelisio.exit.plural
+import com.karelisio.exit.str
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
@@ -71,6 +73,7 @@ internal data class WidgetState(
     val target: Int,
     val nextAllowedAt: Long?,
     val ok: Boolean,
+    val progress: Float,
     val streakStart: Long?,
     val now: Long,
 )
@@ -78,7 +81,7 @@ internal data class WidgetState(
 internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: Long): WidgetState {
     val zone = ZoneId.systemDefault()
     if (config == null || !config.onboardingDone) {
-        return WidgetState(false, Phase.SPACING, 0, 0, null, true, null, now)
+        return WidgetState(false, Phase.SPACING, 0, 0, null, true, 1f, null, now)
     }
     val today = PlanEngine.day(now, zone)
     val todayCount = smokes.count { PlanEngine.day(it.timestamp, zone) == today }
@@ -91,6 +94,7 @@ internal fun widgetState(config: ConfigEntity?, smokes: List<SmokeEntity>, now: 
         target = kotlin.math.ceil(snapshot.targetToday).toInt(),
         nextAllowedAt = snapshot.nextAllowedAt,
         ok = snapshot.isOk(now),
+        progress = snapshot.progress(now),
         streakStart = listOfNotNull(last, config.quitStartedAt).maxOrNull(),
         now = now,
     )
@@ -143,14 +147,14 @@ private fun WidgetContent(state: WidgetState) {
     ) {
         when {
             !state.ready -> Text(
-                "Ouvre Exit pour commencer",
+                str(R.string.widget_ouvre_exit_pour_commencer),
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, textAlign = TextAlign.Center),
             )
             size.width < 100.dp -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 ActionButton(state, 44)
                 Spacer(GlanceModifier.height(4.dp))
                 Text(
-                    if (state.phase == Phase.QUIT) "${streakDays(state)} j" else "${state.todayCount}",
+                    if (state.phase == Phase.QUIT) str(R.string.components_j, streakDays(state)) else "${state.todayCount}",
                     style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold),
                 )
             }
@@ -190,13 +194,13 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
     val valueSize = if (big) 30.sp else 22.sp
     val valueColor = GlanceTheme.colors.primary
     if (state.phase == Phase.QUIT) {
-        Text("Sans fumer", style = labelStyle, maxLines = 1)
+        Text(str(R.string.notify_sans_fumer), style = labelStyle, maxLines = 1)
         val start = state.streakStart
         if (start != null && state.now - start < DAY_MS) {
             Chronometer(base = start, countDown = false, color = valueColor, size = valueSize)
         } else {
             Text(
-                "${streakDays(state)} jours",
+                streakDays(state).toInt().let { plural(R.plurals.days_count, it, it) },
                 style = TextStyle(color = valueColor, fontSize = valueSize, fontWeight = FontWeight.Bold, textAlign = align),
                 maxLines = 1,
             )
@@ -205,15 +209,15 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
     }
     val next = state.nextAllowedAt
     if (state.ok || next == null) {
-        Text("Prochaine", style = labelStyle, maxLines = 1)
+        Text(str(R.string.widget_prochaine), style = labelStyle, maxLines = 1)
         Text(
-            "C'est OK ✓",
+            str(R.string.widget_c_est_ok),
             style = TextStyle(color = valueColor, fontSize = valueSize, fontWeight = FontWeight.Bold, textAlign = align),
             maxLines = 1,
         )
     } else {
         val at = DateTimeFormatter.ofPattern("HH:mm").format(Instant.ofEpochMilli(next).atZone(ZoneId.systemDefault()))
-        Text("Prochaine à $at", style = labelStyle, maxLines = 1)
+        Text(str(R.string.notify_prochaine_a, at), style = labelStyle, maxLines = 1)
         Chronometer(base = next, countDown = true, color = valueColor, size = valueSize)
     }
 }
@@ -221,9 +225,9 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
 @Composable
 private fun Counter(state: WidgetState, center: Boolean = false) {
     val text = if (state.phase == Phase.QUIT) {
-        "Tiens bon, tu avances 💚"
+        str(R.string.widget_tiens_bon_tu_avances)
     } else {
-        "Aujourd'hui : ${state.todayCount}" + if (state.target > 0) " / ${state.target}" else ""
+        str(R.string.widget_aujourd_hui, state.todayCount) + if (state.target > 0) " / ${state.target}" else ""
     }
     Text(
         text,
@@ -250,7 +254,18 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
     } else {
         actionRunCallback<LogSmokeAction>()
     }
-    val description = if (quit) "SOS envie" else "J'en fume une"
+    val description = if (quit) str(R.string.components_sos_envie) else str(R.string.home_j_en_fume_une)
+    val showRing = !quit && !state.ok
+    val ringColor = GlanceTheme.colors.primary.getColor(context).toArgb()
+    val trackColor = GlanceTheme.colors.surfaceVariant.getColor(context).toArgb()
+    Box(contentAlignment = Alignment.Center) {
+    if (showRing) {
+        Image(
+            provider = ImageProvider(ringBitmap(context, (sizeDp + 12), state.progress, ringColor, trackColor)),
+            contentDescription = null,
+            modifier = GlanceModifier.size((sizeDp + 12).dp),
+        )
+    }
     Box(
         modifier = GlanceModifier
             .size(sizeDp.dp)
@@ -278,6 +293,26 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
             )
         }
     }
+    }
+}
+
+/** Anneau de progression dessiné en bitmap (rafraîchi par les alarmes de tick du widget). */
+private fun ringBitmap(context: Context, sizeDp: Int, progress: Float, color: Int, track: Int): android.graphics.Bitmap {
+    val px = (sizeDp * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+    val bitmap = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    val stroke = px * 0.07f
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        style = android.graphics.Paint.Style.STROKE
+        strokeWidth = stroke
+        strokeCap = android.graphics.Paint.Cap.ROUND
+    }
+    val rect = android.graphics.RectF(stroke, stroke, px - stroke, px - stroke)
+    paint.color = track
+    canvas.drawArc(rect, 0f, 360f, false, paint)
+    paint.color = color
+    canvas.drawArc(rect, -90f, 360f * progress.coerceIn(0.02f, 1f), false, paint)
+    return bitmap
 }
 
 /** Chronomètre système (RemoteViews) : se met à jour seul chaque seconde, sans réveiller l'appli. */

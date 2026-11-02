@@ -1,5 +1,13 @@
 package com.karelisio.exit.ui.progress
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +62,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.domain.Badge
@@ -115,6 +126,7 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                 reboundEver = d.events.any { it.type == PlanEventType.RESUME_PLAN.name } ||
                     d.events.any { it.type == PlanEventType.SLIP.name } && PlanEngine.phase(c) == Phase.QUIT && streakMinutes > 24 * 60,
                 onTimeCount = d.smokes.count { !it.early && !it.slip },
+                bonusMinutes = d.smokes.sumOf { it.bonusMinutes },
             ),
         )
     }
@@ -124,7 +136,7 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
-        topBar = { ExitTopBar("Progrès", scroll) },
+        topBar = { ExitTopBar(stringResource(R.string.progress_progres), scroll) },
         floatingActionButton = { SosFab(nav::sos) },
     ) { padding ->
         LazyColumn(
@@ -141,7 +153,7 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                                     style = MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"),
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 )
-                                Text("jours sans fumer", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Text(stringResource(R.string.progress_jours_sans_fumer), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                             ShapeIcon(Icons.Rounded.SmokeFree, MaterialShapes.Sunny, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, size = 72.dp)
                         }
@@ -151,35 +163,36 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
             item(key = "gains") {
                 Column(Modifier.cascade(1), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GainTile(Icons.Rounded.Savings, MaterialShapes.Cookie4Sided, "économisés", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer, Modifier.weight(1f)) {
+                        GainTile(Icons.Rounded.Savings, MaterialShapes.Cookie4Sided, stringResource(R.string.progress_economises), MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer, Modifier.weight(1f)) {
                             CountUpText(gains.money, Fmt::money, MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
-                        GainTile(Icons.Rounded.SmokeFree, MaterialShapes.Clover4Leaf, "cigarettes évitées", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, Modifier.weight(1f)) {
+                        GainTile(Icons.Rounded.SmokeFree, MaterialShapes.Clover4Leaf, stringResource(R.string.progress_cigarettes_evitees), MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, Modifier.weight(1f)) {
                             CountUpText(gains.avoided.toDouble(), { Fmt.number(it.toInt()) }, MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onSecondaryContainer)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GainTile(Icons.Rounded.Favorite, MaterialShapes.Heart, "de vie regagnés", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer, Modifier.weight(1f)) {
+                        GainTile(Icons.Rounded.Favorite, MaterialShapes.Heart, stringResource(R.string.progress_de_vie_regagnes), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer, Modifier.weight(1f)) {
                             Text(Fmt.lifeTime(gains.lifeMinutes), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
                         }
-                        GainTile(Icons.Rounded.EventAvailable, MaterialShapes.Sunny, "jours sans fumer", MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f)) {
+                        GainTile(Icons.Rounded.EventAvailable, MaterialShapes.Sunny, stringResource(R.string.progress_jours_sans_fumer), MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f)) {
                             CountUpText(gains.smokeFreeDays.toDouble(), { Fmt.number(it.toInt()) }, MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"))
                         }
                     }
                     Text(
-                        "Depuis le début du suivi, par rapport à ${c.cigsPerDay} cigarettes par jour. Temps de vie : environ 20 minutes par cigarette évitée. " +
-                            "Les jours sans fumer ne repartent jamais à zéro.",
+                        stringResource(R.string.progress_depuis_le_debut_du_suivi, c.cigsPerDay) +
+                            stringResource(R.string.progress_les_jours_sans_fumer_ne),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp),
                     )
                 }
             }
-            item(key = "healthTitle") {
+            item(key = "piggy") { PiggyBank(c, gains.money, onSave = { label, amount -> vm.updateConfig { it.copy(savingsGoalLabel = label, savingsGoalAmount = amount) } }, modifier = Modifier.cascade(2)) }
+            item(key = str(R.string.progress_healthtitle)) {
                 Column {
-                    SectionTitle("Jalons santé")
+                    SectionTitle(stringResource(R.string.progress_jalons_sante))
                     Text(
-                        if (streakStart == null) "Ils démarrent à ta dernière cigarette." else "Depuis ta dernière cigarette, il y a ${Fmt.duration(now - streakStart)}.",
+                        if (streakStart == null) stringResource(R.string.progress_ils_demarrent_a_ta_derniere) else stringResource(R.string.progress_depuis_ta_derniere_cigarette_il, Fmt.duration(now - streakStart)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp),
@@ -192,11 +205,11 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
             item(key = "sources") {
                 TextButton(onClick = nav::sources) {
                     Icon(Icons.Rounded.Info, contentDescription = null)
-                    Text("  Sources : Tabac info service, OMS")
+                    Text(stringResource(R.string.progress_sources_tabac_info_service_oms))
                 }
             }
-            item(key = "badgesTitle") {
-                SectionTitle("Badges · ${badges.count { it.achieved }} / ${badges.size}")
+            item(key = str(R.string.progress_badgestitle)) {
+                SectionTitle(stringResource(R.string.progress_badges, badges.count { it.achieved }, badges.size))
             }
             item(key = "badges") {
                 FlowRow(
@@ -206,7 +219,15 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                 ) {
                     badges.forEachIndexed { i, badge ->
                         val shape = BADGE_SHAPES[i % BADGE_SHAPES.size]
-                        BadgeTile(badge, shape, Modifier.cascade(i).clickable { openBadge = badge to shape })
+                        BadgeTile(
+                            badge,
+                            shape,
+                            Modifier.cascade(i)
+                                .clickable(onClickLabel = stringResource(R.string.progress_details), role = Role.Button) { openBadge = badge to shape }
+                                .semantics(mergeDescendants = true) {
+                                    stateDescription = if (badge.achieved) str(R.string.progress_badge_obtained) else "${(badge.progress * 100).toInt()} %"
+                                },
+                        )
                     }
                 }
             }
@@ -236,7 +257,70 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { openBadge = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { openBadge = null }) { Text(stringResource(android.R.string.ok)) } },
+        )
+    }
+}
+
+/** Objectif tirelire : ce que les économies vont offrir. */
+@Composable
+private fun PiggyBank(c: com.karelisio.exit.data.ConfigEntity, money: Double, onSave: (String, Double) -> Unit, modifier: Modifier = Modifier) {
+    var editing by remember { mutableStateOf(false) }
+    val goal = c.savingsGoalAmount
+    ExitCard(color = MaterialTheme.colorScheme.secondaryContainer, onClick = { editing = true }, modifier = modifier) {
+        val on = MaterialTheme.colorScheme.onSecondaryContainer
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ShapeIcon(Icons.Rounded.Savings, MaterialShapes.Bun, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary, size = 44.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                if (goal <= 0) {
+                    Text(stringResource(R.string.progress_un_objectif_tirelire), style = MaterialTheme.typography.titleMedium, color = on)
+                    Text(stringResource(R.string.progress_un_week_end_un_velo), style = MaterialTheme.typography.bodyMedium, color = on)
+                } else {
+                    Text(c.savingsGoalLabel.ifBlank { stringResource(R.string.progress_mon_objectif) }, style = MaterialTheme.typography.titleMedium, color = on)
+                    Text(
+                        if (money >= goal) stringResource(R.string.progress_objectif_atteint_fais_toi_plaisir) else stringResource(R.string.progress_sur_encore, Fmt.money(money), Fmt.money(goal), Fmt.money(goal - money)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = on,
+                    )
+                }
+            }
+        }
+        if (goal > 0) {
+            Spacer(Modifier.height(12.dp))
+            LinearWavyProgressIndicator(progress = { (money / goal).toFloat().coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+        }
+    }
+    if (editing) {
+        var label by remember { mutableStateOf(c.savingsGoalLabel) }
+        var amount by remember { mutableStateOf(if (goal > 0) "%.0f".format(goal) else "") }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text(stringResource(R.string.progress_objectif_tirelire)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.material3.OutlinedTextField(label, { label = it.take(40) }, label = { Text(stringResource(R.string.progress_pour_quoi)) }, singleLine = true)
+                    androidx.compose.material3.OutlinedTextField(
+                        amount,
+                        { amount = it.filter { ch -> ch.isDigit() || ch == ',' || ch == '.' }.take(7) },
+                        label = { Text(stringResource(R.string.progress_montant)) },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onSave(label.trim(), amount.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0) ?: 0.0)
+                    editing = false
+                }) { Text(stringResource(android.R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    onSave("", 0.0)
+                    editing = false
+                }) { Text(stringResource(R.string.progress_retirer)) }
+            },
         )
     }
 }
@@ -265,7 +349,13 @@ private fun MilestoneRow(m: HealthMilestone, minutes: Long, modifier: Modifier =
     val isNext = HealthMilestones.next(minutes) == m
     ExitCard(
         color = if (reached) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            stateDescription = when {
+                reached -> str(R.string.progress_reached)
+                isNext -> str(R.string.progress_next_percent, (HealthMilestones.progressToNext(minutes) * 100).toInt())
+                else -> str(R.string.progress_a_venir)
+            }
+        },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
@@ -282,7 +372,7 @@ private fun MilestoneRow(m: HealthMilestone, minutes: Long, modifier: Modifier =
             Column(Modifier.weight(1f)) {
                 Text("${m.label} · ${m.title}", style = MaterialTheme.typography.titleMedium)
                 Text(m.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Source : ${m.source.label}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 4.dp))
+                Text(stringResource(R.string.progress_source, m.source.label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 4.dp))
             }
         }
     }

@@ -1,5 +1,12 @@
 package com.karelisio.exit.ui.components
 
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -51,7 +58,7 @@ fun TriggerChips(
             OutlinedTextField(
                 value = note,
                 onValueChange = { onNote(it.take(40)) },
-                label = { Text("Ton contexte") },
+                label = { Text(stringResource(R.string.components_ton_contexte)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )

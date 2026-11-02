@@ -1,5 +1,12 @@
 package com.karelisio.exit.notify
 
+import com.karelisio.exit.plural
+import com.karelisio.exit.domain.label
+import com.karelisio.exit.domain.title
+import com.karelisio.exit.domain.description
+import com.karelisio.exit.domain.rationale
+import com.karelisio.exit.domain.detail
+import com.karelisio.exit.str
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -23,17 +30,17 @@ class ExitNotifications(private val context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannels(
             listOf(
-                NotificationChannel(CHANNEL_NEXT, "Prochaine autorisée", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Prévient à l'heure exacte où l'intervalle est écoulé"
+                NotificationChannel(CHANNEL_NEXT, str(R.string.settings_prochaine_autorisee), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = str(R.string.notify_previent_a_l_heure_exacte)
                 },
-                NotificationChannel(CHANNEL_MILESTONES, "Jalons santé", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Célèbre chaque bénéfice santé atteint"
+                NotificationChannel(CHANNEL_MILESTONES, str(R.string.progress_jalons_sante), NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = str(R.string.notify_celebre_chaque_benefice_sante_atteint)
                 },
-                NotificationChannel(CHANNEL_PLAN, "Plan", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Ajustements en douceur du plan de réduction"
+                NotificationChannel(CHANNEL_PLAN, str(R.string.notify_plan), NotificationManager.IMPORTANCE_LOW).apply {
+                    description = str(R.string.notify_ajustements_en_douceur_du_plan)
                 },
-                NotificationChannel(CHANNEL_UPDATES, "Mises à jour", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Nouvelle version d'Exit disponible"
+                NotificationChannel(CHANNEL_UPDATES, str(R.string.notify_mises_a_jour), NotificationManager.IMPORTANCE_LOW).apply {
+                    description = str(R.string.notify_nouvelle_version_d_exit_disponible)
                 },
             ),
         )
@@ -50,7 +57,7 @@ class ExitNotifications(private val context: Context) {
         return PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    fun showNextAllowed(intervalMinutes: Int) {
+    fun showNextAllowed(intervalMinutes: Int, reason: String? = null) {
         if (!canPost()) return
         val smoke = PendingIntent.getBroadcast(
             context,
@@ -60,17 +67,18 @@ class ExitNotifications(private val context: Context) {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_NEXT)
             .setSmallIcon(R.drawable.ic_stat_exit)
-            .setContentTitle("C'est OK si tu en as besoin")
-            .setContentText("${PlanEngine.formatDuration(intervalMinutes)} tenues. Tu peux aussi tenter de tenir encore un peu.")
+            .setContentTitle(str(R.string.home_c_est_ok_si_tu))
+            .setContentText(str(R.string.notify_tenues_tu_peux_aussi_tenter, PlanEngine.formatDuration(intervalMinutes)))
             .setStyle(
                 NotificationCompat.BigTextStyle().bigText(
-                    "${PlanEngine.formatDuration(intervalMinutes)} tenues, bravo. Tu peux en fumer une si tu en as besoin… " +
-                        "ou essayer de tenir encore un peu : chaque minute compte.",
+                    str(R.string.notify_tenues_bravo_tu_peux_en, PlanEngine.formatDuration(intervalMinutes)) +
+                        str(R.string.notify_ou_essayer_de_tenir_encore) +
+                        (reason?.let { str(R.string.notify_nta_raison, it) } ?: ""),
                 ),
             )
             .setContentIntent(openApp())
-            .addAction(R.drawable.ic_stat_exit, "J'en fume une", smoke)
-            .addAction(R.drawable.ic_stat_exit, "SOS envie", openApp(MainActivity.DEST_SOS, REQ_SOS))
+            .addAction(R.drawable.ic_stat_exit, str(R.string.home_j_en_fume_une), smoke)
+            .addAction(R.drawable.ic_stat_exit, str(R.string.components_sos_envie), openApp(MainActivity.DEST_SOS, REQ_SOS))
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .build()
@@ -83,9 +91,9 @@ class ExitNotifications(private val context: Context) {
         if (!canPost()) return
         val notification = NotificationCompat.Builder(context, CHANNEL_MILESTONES)
             .setSmallIcon(R.drawable.ic_stat_exit)
-            .setContentTitle("${milestone.label} sans fumer · ${milestone.title}")
+            .setContentTitle(str(R.string.home_sans_fumer, milestone.label, milestone.title))
             .setContentText(milestone.description)
-            .setStyle(NotificationCompat.BigTextStyle().bigText("${milestone.description}\nSource : ${milestone.source.label}"))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(str(R.string.notify_nsource, milestone.description, milestone.source.label)))
             .setContentIntent(openApp(MainActivity.DEST_PROGRESS, REQ_PROGRESS))
             .setAutoCancel(true)
             .build()
@@ -96,7 +104,7 @@ class ExitNotifications(private val context: Context) {
         if (!canPost()) return
         val notification = NotificationCompat.Builder(context, CHANNEL_PLAN)
             .setSmallIcon(R.drawable.ic_stat_exit)
-            .setContentTitle("Plan réajusté en douceur")
+            .setContentTitle(str(R.string.home_plan_reajuste_en_douceur))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setContentIntent(openApp(MainActivity.DEST_PLAN, REQ_PLAN))
@@ -105,12 +113,31 @@ class ExitNotifications(private val context: Context) {
         manager.notify(ID_PLAN, notification)
     }
 
+    fun showWeeklyReview(review: com.karelisio.exit.domain.WeeklyReview) {
+        if (!canPost()) return
+        val text = buildString {
+            append(plural(R.plurals.notify_week_cigarettes, review.smokes, review.smokes))
+            review.change?.let { if (it < 0) append(str(R.string.notify_change_percent, it)) }
+            if (review.cravingsOvercome > 0) append(plural(R.plurals.notify_week_cravings, review.cravingsOvercome, review.cravingsOvercome))
+            append(str(R.string.notify_viens_voir_ton_bilan))
+        }
+        val notification = NotificationCompat.Builder(context, CHANNEL_MILESTONES)
+            .setSmallIcon(R.drawable.ic_stat_exit)
+            .setContentTitle(str(R.string.home_ton_bilan_de_la_semaine))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(openApp(MainActivity.DEST_REVIEW, REQ_REVIEW))
+            .setAutoCancel(true)
+            .build()
+        manager.notify(ID_REVIEW, notification)
+    }
+
     fun showUpdateAvailable(version: String) {
         if (!canPost()) return
         val notification = NotificationCompat.Builder(context, CHANNEL_UPDATES)
             .setSmallIcon(R.drawable.ic_stat_exit)
-            .setContentTitle("Exit $version est disponible")
-            .setContentText("Touche pour voir les nouveautés et installer.")
+            .setContentTitle(str(R.string.notify_exit_est_disponible, version))
+            .setContentText(str(R.string.notify_touche_pour_voir_les_nouveautes))
             .setContentIntent(openApp())
             .setAutoCancel(true)
             .build()
@@ -127,10 +154,12 @@ class ExitNotifications(private val context: Context) {
         private const val ID_MILESTONE = 2
         private const val ID_PLAN = 3
         private const val ID_UPDATE = 4
+        private const val ID_REVIEW = 5
 
         private const val REQ_ACTION_SMOKE = 10
         private const val REQ_SOS = 11
         private const val REQ_PROGRESS = 12
         private const val REQ_PLAN = 13
+        private const val REQ_REVIEW = 14
     }
 }

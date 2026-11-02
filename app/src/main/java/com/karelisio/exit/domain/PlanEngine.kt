@@ -4,9 +4,7 @@ import com.karelisio.exit.data.ConfigEntity
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -25,6 +23,8 @@ data class PlanSnapshot(
     val projectedQuitDay: LocalDate?,
     /** L'objectif est atteint : il ne reste qu'à arrêter. */
     val reachedZero: Boolean,
+    /** Objectif « première du matin » du jour, si actif et pas encore de cigarette aujourd'hui. */
+    val morningGoalAt: Long? = null,
 ) {
     fun isOk(now: Long): Boolean = nextAllowedAt == null || now >= nextAllowedAt
 
@@ -44,7 +44,10 @@ data class PlanAdjustment(
     val anchorAt: Long,
     val anchorPerDay: Double,
     val quitEpochDay: Long?,
-    val message: String,
+    /** Nouvel intervalle de base, en minutes (pour le message). */
+    val intervalMinutes: Int,
+    /** Nouvelle date d'arrêt si elle a dû reculer. */
+    val pushedTo: LocalDate?,
 )
 
 /**
@@ -135,12 +138,18 @@ object PlanEngine {
         val today = day(now, zone)
         val interval = intervalMinutes(c, today, zone)
         val projected = projectedQuitDay(c, zone)
+        val morning = if (phase(c) == Phase.SPACING && c.morningDelayMinutes > 0 && todayCount == 0) {
+            startOfDay(today, zone) + (c.wakeMinutes + c.morningDelayMinutes) * MINUTE_MS
+        } else {
+            null
+        }
         return PlanSnapshot(
             phase = phase(c),
             intervalMinutes = interval,
             targetToday = targetPerDay(c, today, zone),
             lastSmokeAt = lastSmokeAt,
-            nextAllowedAt = lastSmokeAt?.plus(interval * MINUTE_MS),
+            nextAllowedAt = listOfNotNull(lastSmokeAt?.plus(interval * MINUTE_MS), morning).maxOrNull(),
+            morningGoalAt = morning,
             todayCount = todayCount,
             quitDay = quitDay(c),
             projectedQuitDay = projected,
@@ -195,15 +204,8 @@ object PlanEngine {
                 quitEpochDay = pushed.toEpochDay()
             }
         }
-        val message = buildString {
-            append("Les derniers jours ont été plus chargés que prévu, et c'est normal : une réduction n'est jamais une ligne droite. ")
-            append("On réajuste en douceur, environ ${newPerDay.roundToInt()} par jour, une toutes les ${formatDuration(interval)}.")
-            if (pushed != null) append(" La date d'arrêt passe au ${pushed.format(DATE_FORMAT)} pour garder un rythme tenable.")
-        }
-        return PlanAdjustment(startOfDay(today, zone), newPerDay, quitEpochDay, message)
+        return PlanAdjustment(startOfDay(today, zone), newPerDay, quitEpochDay, interval, pushed)
     }
-
-    private val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale.FRENCH)
 
     fun formatDuration(minutes: Int): String {
         val h = minutes / 60

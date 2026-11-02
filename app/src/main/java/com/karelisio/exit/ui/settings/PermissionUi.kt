@@ -1,5 +1,7 @@
 package com.karelisio.exit.ui.settings
 
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -114,7 +116,7 @@ fun GrantButton(granted: Boolean, onRequest: () -> Unit, modifier: Modifier = Mo
         if (ok) {
             ShapeIcon(Icons.Rounded.Check, MaterialShapes.Cookie9Sided, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, size = 56.dp)
         } else {
-            Button(onClick = onRequest, shapes = ButtonDefaults.shapes()) { Text("Autoriser") }
+            Button(onClick = onRequest, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.settings_autoriser)) }
         }
     }
 }

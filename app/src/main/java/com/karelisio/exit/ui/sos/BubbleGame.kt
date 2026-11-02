@@ -1,5 +1,9 @@
 package com.karelisio.exit.ui.sos
 
+import androidx.compose.ui.res.pluralStringResource
+import com.karelisio.exit.str
+import androidx.compose.ui.res.stringResource
+import com.karelisio.exit.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -24,6 +28,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.karelisio.exit.ui.components.rememberHaptics
 import kotlin.math.PI
 import kotlin.math.cos
@@ -59,7 +65,11 @@ fun BubbleGame(modifier: Modifier = Modifier) {
     }
 
     val scheme = MaterialTheme.colorScheme
-    Surface(modifier, shape = MaterialTheme.shapes.large, color = scheme.surfaceContainerHigh) {
+    Surface(
+        modifier.semantics { contentDescription = str(R.string.sos_mini_jeu_eclate_les_bouffees, score) },
+        shape = MaterialTheme.shapes.large,
+        color = scheme.surfaceContainerHigh,
+    ) {
         Box {
             Canvas(
                 Modifier
@@ -105,7 +115,7 @@ fun BubbleGame(modifier: Modifier = Modifier) {
                 }
             }
             Text(
-                if (score == 0) "Éclate les bouffées de fumée" else "$score éclatée${if (score > 1) "s" else ""}",
+                if (score == 0) stringResource(R.string.sos_eclate_les_bouffees_de_fumee) else pluralStringResource(R.plurals.sos_popped, score, score),
                 style = MaterialTheme.typography.labelLarge,
                 color = scheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),
