@@ -31,7 +31,12 @@ Material 3 Expressive.
   avec un conseil.
 - **Après l'arrêt** : compteur de jours sans fumer, badges. Un écart n'efface rien (historique,
   gains, badges) : on choisit de continuer l'arrêt ou de revenir au plan d'espacement.
-- **Sauvegarde** : export / import JSON local (Réglages → Sauvegarde locale).
+- **Sauvegarde** : export / import JSON local, et sauvegarde automatique quotidienne dans un dossier
+  au choix (Réglages → Sauvegarde locale → Sauvegarde automatique).
+- **Mes raisons**, **intensité des envies**, **bonus tenu**, objectif **première du matin**,
+  **objectif tirelire** et **bilan de la semaine** (dimanche 18 h).
+- **Tuiles des réglages rapides** : « J'en fume une » et « SOS envie » (glisser deux fois vers le bas
+  → crayon → ajouter les tuiles Exit).
 - **Widget** Glance redimensionnable aux couleurs dynamiques : compte à rebours en direct,
   bouton +1, compteur du jour ou jours sans fumer.
 - **Mises à jour intégrées** : vérification de la dernière release GitHub (au plus toutes les 6 h),
@@ -112,7 +117,7 @@ redémarrage, après une mise à jour et après un changement d'heure.
 
 ### 5. Widget
 
-Appui long sur l'écran d'accueil → Widgets → Exit. Il est redimensionnable de 1×1 à 4×2. Pendant
+Appui long sur l'écran d'accueil → Widgets → Exit. Le widget principal est redimensionnable de 1×1 à 4×2, avec un anneau de progression autour du +1. Un second widget « SOS envie » (1×1) ouvre directement le mode SOS. Pendant
 l'espacement, le bouton note une cigarette (+1). Pendant l'arrêt, il ouvre le mode SOS.
 
 ## Développement local
