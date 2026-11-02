@@ -53,6 +53,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.data.CravingEntity
 import com.karelisio.exit.data.SmokeEntity
@@ -134,7 +137,13 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                             },
                             modifier = Modifier.animateItem(),
                         ) {
-                            SmokeRow(smoke, onClick = { editing = smoke })
+                            SmokeRow(smoke, onClick = { editing = smoke }, onDelete = {
+                                vm.deleteSmoke(smoke)
+                                scope.launch {
+                                    val r = snackbar.showSnackbar("Cigarette supprimée", actionLabel = "Annuler", withDismissAction = true)
+                                    if (r == SnackbarResult.ActionPerformed) vm.restoreSmoke(smoke)
+                                }
+                            })
                         }
                     }
                 }
@@ -151,7 +160,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                             },
                             modifier = Modifier.animateItem(),
                         ) {
-                            CravingRow(craving)
+                            CravingRow(craving, onDelete = { vm.deleteCraving(craving) })
                         }
                     }
                 }
@@ -231,9 +240,16 @@ private fun Dismissable(onDelete: () -> Unit, modifier: Modifier = Modifier, con
 }
 
 @Composable
-private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit) {
+private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit, onDelete: () -> Unit) {
     val trigger = Trigger.of(smoke.trigger)
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = "Modifier", onClick = onClick)
+            // Alternative au glisser pour supprimer (TalkBack, accès par contacteur).
+            .semantics(mergeDescendants = true) { customActions = listOf(CustomAccessibilityAction("Supprimer") { onDelete(); true }) },
+    ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ShapeIcon(
                 Icons.Rounded.SmokingRooms,
@@ -261,9 +277,14 @@ private fun SmokeRow(smoke: SmokeEntity, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CravingRow(craving: CravingEntity) {
+private fun CravingRow(craving: CravingEntity, onDelete: () -> Unit) {
     val trigger = Trigger.of(craving.trigger)
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
+            customActions = listOf(CustomAccessibilityAction("Supprimer") { onDelete(); true })
+        },
+    ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ShapeIcon(
                 if (craving.overcome) Icons.Rounded.Spa else Icons.Rounded.Cloud,

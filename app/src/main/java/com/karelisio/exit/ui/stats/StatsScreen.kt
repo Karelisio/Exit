@@ -312,7 +312,7 @@ private fun HourChart(hours: IntArray, cravings: IntArray, modifier: Modifier = 
     val tertiary = MaterialTheme.colorScheme.tertiary
     val maxH = maxOf(hours.maxOrNull() ?: 0, cravings.maxOrNull() ?: 0, 1)
     val top = hours.withIndex().maxByOrNull { it.value }?.takeIf { it.value > 0 }?.index
-    Canvas(modifier) {
+    Canvas(modifier.semantics { contentDescription = top?.let { "Heure la plus fréquente : $it h, ${hours[it]} cigarettes" } ?: "Pas encore de données" }) {
         val slot = size.width / 24
         val barW = slot * 0.7f
         hours.forEachIndexed { i, v ->

@@ -135,6 +135,17 @@ class ScreensTest {
         shot("40-home-quit")
     }
 
+    /** Police système agrandie (×1,6) : rien ne doit déborder ni planter. */
+    @Test
+    @Config(fontScale = 1.6f)
+    fun largeFont() {
+        seed()
+        setApp()
+        shot("60-home-large-font")
+        compose.onNode(androidx.compose.ui.test.hasText("SOS envie"), useUnmergedTree = true).performClick()
+        shot("61-sos-large-font")
+    }
+
     @Test
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun darkHome() {
@@ -144,6 +155,12 @@ class ScreensTest {
     }
 
     private fun androidx.compose.ui.test.junit4.AndroidComposeTestRule<*, *>.onNodeWithContentDescriptionSafe(desc: String) {
-        onNode(androidx.compose.ui.test.hasContentDescription(desc)).performClick()
+        val matcher = androidx.compose.ui.test.hasContentDescription(desc)
+        repeat(50) {
+            if (onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()) return@repeat
+            mainClock.advanceTimeBy(200)
+            Thread.sleep(20)
+        }
+        onNode(matcher).performClick()
     }
 }

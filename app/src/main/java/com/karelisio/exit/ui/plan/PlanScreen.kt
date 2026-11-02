@@ -68,6 +68,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.data.ConfigEntity
 import com.karelisio.exit.data.PlanEventEntity
@@ -346,7 +348,10 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
     val secondary = MaterialTheme.colorScheme.secondary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val todayColor = MaterialTheme.colorScheme.tertiary
-    Box(modifier) {
+    Box(modifier.semantics {
+        contentDescription = "Courbe de réduction : objectif de ${(curve.firstOrNull()?.second ?: 0.0).roundToInt()} par jour au départ, " +
+            "zéro le ${curve.lastOrNull()?.first?.let { Fmt.dayFull(it) } ?: "—"}"
+    }) {
         Canvas(Modifier.matchParentSize()) {
             val days = ChronoUnit.DAYS.between(start, end).coerceAtLeast(1).toFloat()
             val max = maxOf(curve.maxOfOrNull { it.second } ?: 1.0, (actual.values.maxOrNull() ?: 0).toDouble(), 1.0).toFloat() * 1.1f

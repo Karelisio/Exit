@@ -54,6 +54,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.karelisio.exit.domain.Badge
@@ -208,7 +211,15 @@ fun ProgressScreen(vm: AppViewModel, nav: Navigator) {
                 ) {
                     badges.forEachIndexed { i, badge ->
                         val shape = BADGE_SHAPES[i % BADGE_SHAPES.size]
-                        BadgeTile(badge, shape, Modifier.cascade(i).clickable { openBadge = badge to shape })
+                        BadgeTile(
+                            badge,
+                            shape,
+                            Modifier.cascade(i)
+                                .clickable(onClickLabel = "Détails", role = Role.Button) { openBadge = badge to shape }
+                                .semantics(mergeDescendants = true) {
+                                    stateDescription = if (badge.achieved) "obtenu" else "${(badge.progress * 100).toInt()} %"
+                                },
+                        )
                     }
                 }
             }
@@ -330,7 +341,13 @@ private fun MilestoneRow(m: HealthMilestone, minutes: Long, modifier: Modifier =
     val isNext = HealthMilestones.next(minutes) == m
     ExitCard(
         color = if (reached) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) {
+            stateDescription = when {
+                reached -> "atteint"
+                isNext -> "prochain jalon, ${(HealthMilestones.progressToNext(minutes) * 100).toInt()} %"
+                else -> "à venir"
+            }
+        },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {

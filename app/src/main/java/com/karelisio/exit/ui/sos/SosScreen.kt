@@ -72,6 +72,9 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
@@ -385,9 +388,14 @@ private fun Breathing(inhale: Float, exhale: Float, hapticsOn: Boolean, modifier
                 transitionSpec = { (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut()) },
                 label = "breathLabel",
             ) { i ->
-                Text(if (i) "Inspire" else "Expire", style = MaterialTheme.typography.headlineMedium, color = scheme.onPrimaryContainer)
+                Text(
+                    if (i) "Inspire" else "Expire",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = scheme.onPrimaryContainer,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
             }
-            Text("$phaseLeft", style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = scheme.onPrimaryContainer)
+            Text("$phaseLeft", modifier = Modifier.clearAndSetSemantics { }, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = scheme.onPrimaryContainer)
         }
     }
 }

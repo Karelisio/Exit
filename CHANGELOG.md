@@ -14,7 +14,9 @@ au moment de la mise à jour.
 - Widget : anneau de progression autour du +1, nouveau widget SOS.
 - Bilan de la semaine (notification le dimanche à 18 h).
 - Objectif tirelire dans Progrès, badge « Tenace ».
-- Démarrage plus fluide (profil de référence) et meilleure accessibilité.
+- Démarrage plus fluide (profil de référence).
+- Accessibilité : titres de section annoncés, action « Supprimer » sans glisser dans l'historique,
+  états des jalons et badges lus par TalkBack, respiration annoncée, mise en page adaptée aux grandes polices.
 
 ## 1.0.0
 

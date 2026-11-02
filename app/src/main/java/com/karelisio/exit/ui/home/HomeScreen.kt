@@ -355,7 +355,10 @@ private fun TimerHero(snapshot: PlanSnapshot, now: Long) {
 
 @Composable
 private fun InfoPills(snapshot: PlanSnapshot, todayCount: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         Pill("Intervalle ${PlanEngine.formatDuration(snapshot.intervalMinutes)}")
         val target = ceil(snapshot.targetToday).toInt()
         Pill("Aujourd'hui $todayCount" + if (target > 0) " / $target" else "")

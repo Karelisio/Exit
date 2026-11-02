@@ -85,6 +85,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import com.karelisio.exit.domain.StepPeriod
@@ -237,7 +241,7 @@ fun OnboardingScreen(vm: AppViewModel) {
 
 @Composable
 private fun Indicator(count: Int, current: Int, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.clearAndSetSemantics { contentDescription = "Page ${current + 1} sur $count" }, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(count) { i ->
             val width by animateDpAsState(if (i == current) 24.dp else 8.dp, spring(dampingRatio = 0.6f, stiffness = 400f), label = "dot")
             val color by animateColorAsState(if (i == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, label = "dotColor")
@@ -347,12 +351,12 @@ private fun Stepper(label: String, value: Int, onChange: (Int) -> Unit, shape: R
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value - 1) }) { Icon(Icons.Rounded.Remove, contentDescription = "Moins") }
+            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value - 1) }) { Icon(Icons.Rounded.Remove, contentDescription = "$label : moins") }
             Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
                 ShapeIcon(Icons.Rounded.Add, shape, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primaryContainer, size = 60.dp)
                 AnimatedCounter(value.toString(), MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value + 1) }) { Icon(Icons.Rounded.Add, contentDescription = "Plus") }
+            FilledTonalIconButton(onClick = { haptics.tick(); onChange(value + 1) }) { Icon(Icons.Rounded.Add, contentDescription = "$label : plus") }
         }
     }
 }
@@ -483,7 +487,7 @@ private fun Choice(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
             .border(2.dp, border, MaterialTheme.shapes.large)
-            .clickable {
+            .selectable(selected = selected, role = Role.RadioButton) {
                 haptics.tick()
                 onClick()
             },

@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.karelisio.exit.ui.navigation.sharedContainer
 
 /** Bouton SOS envie, présent sur tous les écrans principaux ; se transforme en écran SOS. */
@@ -57,7 +59,7 @@ fun ExitTopBar(
     actions: @Composable () -> Unit = {},
 ) {
     LargeTopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() }) },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Retour") }
@@ -78,7 +80,7 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
+        modifier = modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp).semantics { heading() },
     )
 }
 
