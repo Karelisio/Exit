@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Thème de fenêtre minimal : tout le reste est dessiné par Compose (Material 3 Expressive). -->
+    <style name="Theme.Exit" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/exit_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Splash animé (SplashScreen API) : la fumée se dessine puis devient une flèche de sortie. -->
+    <style name="Theme.Exit.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_animated</item>
+        <item name="windowSplashScreenAnimationDuration">900</item>
+        <item name="postSplashScreenTheme">@style/Theme.Exit</item>
+    </style>
+</resources>
