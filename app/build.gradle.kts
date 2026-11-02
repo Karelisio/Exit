@@ -74,6 +74,11 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+
+    testOptions {
+        // Tests Robolectric : rendu réel des écrans Compose sur la JVM.
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 kotlin {
@@ -122,4 +127,20 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
+}
+
+tasks.withType<Test>().configureEach {
+    // Robolectric manipule des descripteurs de fichiers internes au JDK.
+    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    // Captures d'écran (rendu Robolectric) : -PexitScreenshots=true.
+    systemProperty("exit.screenshots", providers.gradleProperty("exitScreenshots").orNull ?: "false")
+    systemProperty("exit.screenshots.dir", layout.buildDirectory.dir("screenshots").get().asFile.absolutePath)
+    // Miroir Maven optionnel pour les jars Android téléchargés par Robolectric.
+    providers.gradleProperty("robolectricRepoUrl").orNull?.let { systemProperty("robolectric.dependency.repo.url", it) }
 }

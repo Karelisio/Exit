@@ -19,7 +19,7 @@ class DailyWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val container = applicationContext.appContainer
         container.repository.runDriftCheck()?.let { container.notifications.showPlanAdjusted(it.message) }
         container.refreshSchedules()
-        container.updates.checkInBackground()
+        container.updates.checkInBackground()?.let { container.notifications.showUpdateAvailable(it.version) }
         return Result.success()
     }
 

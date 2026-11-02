@@ -47,6 +47,12 @@ object Fmt {
         return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
     }
 
+    /** Chronomètre « 5:04:09 » (heures toujours affichées). */
+    fun clock(millis: Long): String {
+        val total = millis / 1000
+        return "%d:%02d:%02d".format(total / 3600, (total % 3600) / 60, total % 60)
+    }
+
     /** Durée lisible : « 3 j 4 h », « 2 h 15 », « 12 min ». */
     fun duration(millis: Long): String {
         val d = millis / DAY_MS

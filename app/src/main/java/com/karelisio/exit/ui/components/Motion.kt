@@ -123,9 +123,10 @@ fun CountUpText(
 
 /** Retours haptiques subtils (primitives de composition quand le moteur les gère). */
 class Haptics(context: Context) {
-    private val vibrator: Vibrator = context.getSystemService(VibratorManager::class.java).defaultVibrator
+    private val vibrator: Vibrator? = runCatching { context.getSystemService(VibratorManager::class.java)?.defaultVibrator }.getOrNull()
 
     private fun primitive(id: Int, scale: Float, fallback: () -> VibrationEffect) {
+        val vibrator = vibrator ?: return
         if (!vibrator.hasVibrator()) return
         val effect = if (vibrator.areAllPrimitivesSupported(id)) {
             VibrationEffect.startComposition().addPrimitive(id, scale).compose()
@@ -152,6 +153,7 @@ class Haptics(context: Context) {
     }
 
     fun success() {
+        val vibrator = vibrator ?: return
         if (!vibrator.hasVibrator()) return
         val ids = intArrayOf(VibrationEffect.Composition.PRIMITIVE_QUICK_RISE, VibrationEffect.Composition.PRIMITIVE_CLICK)
         val effect = if (vibrator.areAllPrimitivesSupported(*ids)) {

@@ -474,7 +474,7 @@ private fun QuitHero(streakStart: Long?, now: Long, onSlip: () -> Unit, modifier
                 )
                 Text(if (days <= 1) "jour sans fumer" else "jours sans fumer", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(
-                    "+ ${Fmt.countdown(rest)}",
+                    "+ ${Fmt.clock(rest)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )

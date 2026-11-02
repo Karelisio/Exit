@@ -119,13 +119,17 @@ class UpdateManager(
         if (isEnabled && System.currentTimeMillis() - last >= STALE_MS) scope.launch { check() }
     }
 
+    /** Vérification demandée par l'utilisateur : la version ignorée est reproposée. */
     fun checkNow() {
+        prefs.edit { remove(KEY_DISMISSED) }
         scope.launch { check() }
     }
 
-    suspend fun checkInBackground() {
+    /** Vérification périodique hors appli : renvoie une version à signaler, sauf si elle a été ignorée. */
+    suspend fun checkInBackground(): UpdateInfo? {
         val last = prefs.getLong(KEY_LAST_CHECK, 0)
-        if (isEnabled && System.currentTimeMillis() - last >= STALE_MS) check()
+        if (!isEnabled || System.currentTimeMillis() - last < STALE_MS) return null
+        return check()?.takeIf { it.version != dismissedVersion }
     }
 
     suspend fun check(): UpdateInfo? {

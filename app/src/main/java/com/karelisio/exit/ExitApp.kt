@@ -12,7 +12,7 @@ class ExitApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         container.notifications.createChannels()
-        DailyWorker.schedule(this)
+        runCatching { DailyWorker.schedule(this) }
         container.scope.launch {
             container.repository.runDriftCheck()
             container.refreshSchedules()
