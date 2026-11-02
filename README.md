@@ -162,9 +162,10 @@ Tous les textes sont dans `app/src/main/res/values/` :
 
 - `strings_ui.xml` : interface, notifications, widget, mises à jour (clés préfixées par écran) ;
 - `strings_domain.xml` : déclencheurs, jalons santé, badges, autorisations ;
-- `strings_core.xml` : messages du plan, navigation, `format_locale` (langue des dates et montants).
+- `strings_core.xml` : messages du plan, navigation, `format_locale` (langue des dates et montants) ;
+- `plurals.xml` : textes qui dépendent d'un nombre (cigarettes, jours, envies…).
 
-Pour ajouter une langue (par exemple l'anglais), copier ces trois fichiers dans `values-en/`,
+Pour ajouter une langue (par exemple l'anglais), copier ces fichiers dans `values-en/`,
 traduire les textes et mettre `format_locale` à `en-GB`. Les messages du journal du plan déjà
 enregistrés restent dans la langue où ils ont été écrits.
 

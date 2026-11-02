@@ -1,5 +1,6 @@
 package com.karelisio.exit.notify
 
+import com.karelisio.exit.plural
 import com.karelisio.exit.domain.label
 import com.karelisio.exit.domain.title
 import com.karelisio.exit.domain.description
@@ -115,9 +116,9 @@ class ExitNotifications(private val context: Context) {
     fun showWeeklyReview(review: com.karelisio.exit.domain.WeeklyReview) {
         if (!canPost()) return
         val text = buildString {
-            append(str(R.string.notify_cigarette_cette_semaine, review.smokes, if (review.smokes > 1) "s" else ""))
+            append(plural(R.plurals.notify_week_cigarettes, review.smokes, review.smokes))
             review.change?.let { if (it < 0) append(str(R.string.notify_change_percent, it)) }
-            if (review.cravingsOvercome > 0) append(str(R.string.notify_envie_surmontee, review.cravingsOvercome, if (review.cravingsOvercome > 1) "s" else "", if (review.cravingsOvercome > 1) "s" else ""))
+            if (review.cravingsOvercome > 0) append(plural(R.plurals.notify_week_cravings, review.cravingsOvercome, review.cravingsOvercome))
             append(str(R.string.notify_viens_voir_ton_bilan))
         }
         val notification = NotificationCompat.Builder(context, CHANNEL_MILESTONES)

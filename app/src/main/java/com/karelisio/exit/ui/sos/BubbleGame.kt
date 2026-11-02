@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.sos
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.str
 import androidx.compose.ui.res.stringResource
 import com.karelisio.exit.R
@@ -114,7 +115,7 @@ fun BubbleGame(modifier: Modifier = Modifier) {
                 }
             }
             Text(
-                if (score == 0) stringResource(R.string.sos_eclate_les_bouffees_de_fumee) else stringResource(R.string.sos_eclatee, score, if (score > 1) "s" else ""),
+                if (score == 0) stringResource(R.string.sos_eclate_les_bouffees_de_fumee) else pluralStringResource(R.plurals.sos_popped, score, score),
                 style = MaterialTheme.typography.labelLarge,
                 color = scheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),

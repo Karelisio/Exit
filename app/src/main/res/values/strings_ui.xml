@@ -15,7 +15,6 @@
     <string name="components_sos_envie">SOS envie</string>
     <string name="components_ton_contexte">Ton contexte</string>
     <string name="data_arret_complet_c_est_parti">Arrêt complet : c\'est parti !</string>
-    <string name="data_debut_du_plan_cigarettes_par">Début du plan : %1$s cigarettes par jour au départ.</string>
     <string name="data_format_inconnu">Format inconnu</string>
     <string name="data_intervalle_ajuste_a_la_main">Intervalle ajusté à la main (%1$s%2$s min).</string>
     <string name="data_nouvelle_date_d_arret_choisie">Nouvelle date d\'arrêt choisie.</string>
@@ -44,7 +43,6 @@
     <string name="history_pas_encore_d_envie_notee">Pas encore d\'envie notée.\nAu prochain coup dur, ouvre le mode SOS : il t\'accompagne 5 minutes.</string>
     <string name="history_sans_contexte_touche_pour_en">Sans contexte · touche pour en ajouter</string>
     <string name="history_supprimer">Supprimer</string>
-    <string name="history_surmontee">%1$s / %2$s surmontée%3$s</string>
     <string name="home_a">à %1$s</string>
     <string name="home_arret_complet_depuis_le">Arrêt complet depuis le %1$s</string>
     <string name="home_arret_le">Arrêt le %1$s</string>
@@ -58,7 +56,6 @@
     <string name="home_depuis_ta_derniere_cigarette">Depuis ta dernière cigarette</string>
     <string name="home_dont_cette_semaine_chacune_compte">dont %1$s cette semaine. Chacune compte.</string>
     <string name="home_en_avance_pas_grave_on">%1$s en avance. Pas grave, on continue ensemble.</string>
-    <string name="home_envie_surmontee">%1$s envie%2$s surmontée%3$s</string>
     <string name="home_envies_surmontees_bonus_tenu_economies">Envies surmontées, bonus tenu, économies : viens voir.</string>
     <string name="home_evitees">évitées</string>
     <string name="home_fermer">Fermer</string>
@@ -68,7 +65,6 @@
     <string name="home_j_en_fume_une">J\'en fume une</string>
     <string name="home_je_continue_mon_arret">Je continue mon arrêt</string>
     <string name="home_je_me_suis_trompee_annuler">Je me suis trompé·e, annuler</string>
-    <string name="home_jour_sans_fumer">jour sans fumer</string>
     <string name="home_le_minuteur_laisse_place_au">Le minuteur laisse place au compteur de jours sans fumer. Si un écart arrive, rien n\'est perdu : on en parle, sans jugement.</string>
     <string name="home_merci_de_l_avoir_notee">Merci de l\'avoir notée. Le minuteur repart.</string>
     <string name="home_note_ta_prochaine_cigarette">note ta prochaine cigarette</string>
@@ -86,7 +82,6 @@
     <string name="home_sans_fumer">%1$s sans fumer · %2$s</string>
     <string name="home_si_tu_en_as_besoin">si tu en as besoin</string>
     <string name="home_tes_gains">Tes gains</string>
-    <string name="home_tes_jours_sans_fumer_tes">"Tes %1$s jours sans fumer, tes %2$s économisés et tes badges restent acquis. "</string>
     <string name="home_ton_bilan_de_la_semaine">Ton bilan de la semaine est prêt</string>
     <string name="home_ton_corps_se_repare">Ton corps se répare</string>
     <string name="home_ton_plan_arrive_a_zero">Ton plan arrive à zéro. Quand tu te sens prêt·e, passe à l\'arrêt complet : le compteur de jours sans fumer prend le relais.</string>
@@ -99,8 +94,6 @@
     <string name="notify_ajustements_en_douceur_du_plan">Ajustements en douceur du plan de réduction</string>
     <string name="notify_c_est_ok_aujourd_hui">C\'est OK · aujourd\'hui %1$s</string>
     <string name="notify_celebre_chaque_benefice_sante_atteint">Célèbre chaque bénéfice santé atteint</string>
-    <string name="notify_cigarette_cette_semaine">%1$s cigarette%2$s cette semaine</string>
-    <string name="notify_envie_surmontee">, %1$s envie%2$s surmontée%3$s</string>
     <string name="notify_exit_est_disponible">Exit %1$s est disponible</string>
     <string name="notify_mises_a_jour">Mises à jour</string>
     <string name="notify_nouvelle_version_d_exit_disponible">Nouvelle version d\'Exit disponible</string>
@@ -136,7 +129,6 @@
     <string name="onboarding_montrer_l_exemple">Montrer l\'exemple</string>
     <string name="onboarding_n">\n</string>
     <string name="onboarding_najoute_le_widget_exit_sur">\nAjoute le widget Exit sur ton écran d\'accueil pour noter une cigarette en un geste.</string>
-    <string name="onboarding_on_part_de_cigarettes_par">On part de %1$s cigarettes par jour</string>
     <string name="onboarding_page_sur">Page %1$s sur %2$s</string>
     <string name="onboarding_par_an">%1$s par an</string>
     <string name="onboarding_pas_de_date_on_espace">Pas de date, on espace d\'abord</string>
@@ -166,7 +158,6 @@
     <string name="plan_date_d_arret">Date d\'arrêt</string>
     <string name="plan_depuis_le">Depuis le %1$s</string>
     <string name="plan_dont_ajuste_a_la_main">dont %1$s%2$s ajusté à la main</string>
-    <string name="plan_encore_jour_a_ton_rythme">Encore %1$s jour%2$s, à ton rythme</string>
     <string name="plan_intervalle">Intervalle</string>
     <string name="plan_intervalle_aujourd_hui">Intervalle aujourd\'hui : %1$s</string>
     <string name="plan_jour">%1$s / jour</string>
@@ -177,7 +168,6 @@
     <string name="plan_min">+%1$s min %2$s</string>
     <string name="plan_min_par_palier">+%1$s min par palier</string>
     <string name="plan_objectif_arret_le">Objectif : arrêt le %1$s</string>
-    <string name="plan_objectif_du_jour_cigarette">Objectif du jour : ≈ %1$s cigarette%2$s</string>
     <string name="plan_on_espace_d_abord">On espace d\'abord</string>
     <string name="plan_on_repart_en_douceur_avec">On repart en douceur avec un minuteur. Tes jours sans fumer, tes gains et tes badges restent acquis.</string>
     <string name="plan_paliers">Paliers</string>
@@ -233,7 +223,6 @@
     <string name="progress_university_college_london_c_est">University College London). C\'est un ordre de grandeur, pas une promesse individuelle.</string>
     <string name="review_autant_que_la_semaine_d">Autant que la semaine d\'avant : tu tiens le cap.</string>
     <string name="review_bonus_tenu">Bonus tenu</string>
-    <string name="review_cigarettes">%1$s cigarettes</string>
     <string name="review_du_au">Du %1$s au %2$s</string>
     <string name="review_economise_cette_semaine">Économisé cette semaine</string>
     <string name="review_jours_sans_fumer">Jours sans fumer</string>
@@ -290,7 +279,6 @@
     <string name="settings_prochaine_autorisee">Prochaine autorisée</string>
     <string name="settings_quotidienne_derniere_le_a">Quotidienne · dernière le %1$s à %2$s</string>
     <string name="settings_quotidienne_pas_encore_faite">Quotidienne · pas encore faite</string>
-    <string name="settings_raison">%1$s raison%2$s</string>
     <string name="settings_rappelees_dans_le_sos_et">Rappelées dans le SOS et les notifications</string>
     <string name="settings_recherche">Recherche…</string>
     <string name="settings_reglages">Réglages</string>
@@ -326,7 +314,6 @@
     <string name="sos_court_44">Court 4·4</string>
     <string name="sos_de_a_elle_est_bien">De %1$s à %2$s : elle est bien redescendue.</string>
     <string name="sos_eclate_les_bouffees_de_fumee">Éclate les bouffées de fumée</string>
-    <string name="sos_eclatee">%1$s éclatée%2$s</string>
     <string name="sos_ecris_en_une_phrase_pourquoi">Écris en une phrase pourquoi tu veux arrêter.</string>
     <string name="sos_elle_est_encore_la_et">Elle est encore là, et c\'est normal : tu l\'as quand même traversée.</string>
     <string name="sos_encore_un_peu_de_respiration">Encore un peu de respiration</string>
@@ -428,7 +415,6 @@
     <string name="update_verification_impossible">Vérification impossible</string>
     <string name="widget_aujourd_hui">Aujourd\'hui : %1$s</string>
     <string name="widget_c_est_ok">C\'est OK ✓</string>
-    <string name="widget_jours">%1$s jours</string>
     <string name="widget_ouvre_exit_pour_commencer">Ouvre Exit pour commencer</string>
     <string name="widget_prochaine">Prochaine</string>
     <string name="widget_tiens_bon_tu_avances">Tiens bon, tu avances 💚</string>

@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.onboarding
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.domain.label
 import com.karelisio.exit.domain.title
 import com.karelisio.exit.domain.description
@@ -581,7 +582,7 @@ private fun Ready(active: Boolean, cigsPerDay: Int, hasDate: Boolean, quitEpochD
             },
             title = stringResource(R.string.onboarding_tout_est_pret),
             body = buildString {
-                append(stringResource(R.string.onboarding_on_part_de_cigarettes_par, cigsPerDay))
+                append(pluralStringResource(R.plurals.onboarding_start_from, cigsPerDay, cigsPerDay))
                 append(if (hasDate) stringResource(R.string.onboarding_jusqu_au, Fmt.dayFull(LocalDate.ofEpochDay(quitEpochDay))) else stringResource(R.string.onboarding_et_on_espace_d_abord))
                 append(stringResource(R.string.onboarding_najoute_le_widget_exit_sur))
             },

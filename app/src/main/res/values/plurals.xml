@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pluriels (en français, « one » couvre 0 et 1). -->
+<resources>
+    <plurals name="cigarettes_count">
+        <item quantity="one">%1$d cigarette</item>
+        <item quantity="other">%1$d cigarettes</item>
+    </plurals>
+    <plurals name="cravings_overcome_ratio">
+        <item quantity="one">%1$d / %2$d surmontée</item>
+        <item quantity="other">%1$d / %2$d surmontées</item>
+    </plurals>
+    <plurals name="cravings_overcome">
+        <item quantity="one">%1$d envie surmontée</item>
+        <item quantity="other">%1$d envies surmontées</item>
+    </plurals>
+    <plurals name="plan_target_today">
+        <item quantity="one">Objectif du jour : ≈ %1$d cigarette</item>
+        <item quantity="other">Objectif du jour : ≈ %1$d cigarettes</item>
+    </plurals>
+    <plurals name="plan_days_left">
+        <item quantity="one">Encore %1$d jour, à ton rythme</item>
+        <item quantity="other">Encore %1$d jours, à ton rythme</item>
+    </plurals>
+    <plurals name="sos_popped">
+        <item quantity="one">%1$d éclatée</item>
+        <item quantity="other">%1$d éclatées</item>
+    </plurals>
+    <plurals name="notify_week_cigarettes">
+        <item quantity="one">%1$d cigarette cette semaine</item>
+        <item quantity="other">%1$d cigarettes cette semaine</item>
+    </plurals>
+    <plurals name="notify_week_cravings">
+        <item quantity="one">", %1$d envie surmontée"</item>
+        <item quantity="other">", %1$d envies surmontées"</item>
+    </plurals>
+    <plurals name="reasons_count">
+        <item quantity="one">%1$d raison</item>
+        <item quantity="other">%1$d raisons</item>
+    </plurals>
+    <plurals name="days_smoke_free_label">
+        <item quantity="one">jour sans fumer</item>
+        <item quantity="other">jours sans fumer</item>
+    </plurals>
+    <plurals name="days_count">
+        <item quantity="one">%1$d jour</item>
+        <item quantity="other">%1$d jours</item>
+    </plurals>
+    <plurals name="slip_kept">
+        <item quantity="one">"Ton %1$d jour sans fumer, tes %2$s économisés et tes badges restent acquis. "</item>
+        <item quantity="other">"Tes %1$d jours sans fumer, tes %2$s économisés et tes badges restent acquis. "</item>
+    </plurals>
+    <plurals name="plan_start_message">
+        <item quantity="one">Début du plan : %1$d cigarette par jour au départ.</item>
+        <item quantity="other">Début du plan : %1$d cigarettes par jour au départ.</item>
+    </plurals>
+    <plurals name="onboarding_start_from">
+        <item quantity="one">On part de %1$d cigarette par jour</item>
+        <item quantity="other">On part de %1$d cigarettes par jour</item>
+    </plurals>
+</resources>

@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.plan
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.str
 import androidx.compose.ui.res.stringResource
 import com.karelisio.exit.R
@@ -140,13 +141,13 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                     val lines = buildList {
                         if (snapshot.phase == Phase.SPACING) {
                             add(stringResource(R.string.plan_intervalle_aujourd_hui, PlanEngine.formatDuration(snapshot.intervalMinutes)))
-                            add(stringResource(R.string.plan_objectif_du_jour_cigarette, ceil(snapshot.targetToday).toInt(), if (snapshot.targetToday > 1) "s" else ""))
+                            add(ceil(snapshot.targetToday).toInt().let { pluralStringResource(R.plurals.plan_target_today, it, it) })
                             if (c.quitEpochDay == null) {
                                 add(stringResource(R.string.plan_min, c.stepMinutes, if (PlanEngine.stepPeriod(c) == StepPeriod.WEEK) "chaque semaine" else "chaque jour"))
                                 snapshot.projectedQuitDay?.let { add(stringResource(R.string.plan_zero_estime_vers_le, Fmt.dayFull(it))) }
                             } else {
                                 val left = ChronoUnit.DAYS.between(LocalDate.now(), LocalDate.ofEpochDay(c.quitEpochDay))
-                                add(if (left > 0) stringResource(R.string.plan_encore_jour_a_ton_rythme, left, if (left > 1) "s" else "") else stringResource(R.string.plan_c_est_le_moment_tu))
+                                add(if (left > 0) pluralStringResource(R.plurals.plan_days_left, left.toInt(), left.toInt()) else stringResource(R.string.plan_c_est_le_moment_tu))
                             }
                         } else {
                             c.quitStartedAt?.let { add(stringResource(R.string.plan_depuis_le, Fmt.dayFull(PlanEngine.day(it, zone)))) }

@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.history
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.domain.label
 import com.karelisio.exit.domain.title
 import com.karelisio.exit.domain.description
@@ -133,7 +134,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
             if (tab == 0) {
                 if (d.smokes.isEmpty()) item(key = "empty0") { Empty(stringResource(R.string.history_aucune_cigarette_notee_pour_l)) }
                 smokesByDay.forEach { (day, smokes) ->
-                    item(key = "h-s-$day") { DayHeader(Fmt.dayLabel(day, today), stringResource(R.string.history_cigarette, smokes.size, if (smokes.size > 1) "s" else ""), Modifier.animateItem()) }
+                    item(key = "h-s-$day") { DayHeader(Fmt.dayLabel(day, today), pluralStringResource(R.plurals.cigarettes_count, smokes.size, smokes.size), Modifier.animateItem()) }
                     items(smokes, key = { "s-${it.id}" }) { smoke ->
                         Dismissable(
                             onDelete = {
@@ -159,7 +160,7 @@ fun HistoryScreen(vm: AppViewModel, nav: Navigator) {
                 if (d.cravings.isEmpty()) item(key = "empty1") { Empty(stringResource(R.string.history_pas_encore_d_envie_notee)) }
                 cravingsByDay.forEach { (day, cravings) ->
                     val won = cravings.count { it.overcome }
-                    item(key = "h-c-$day") { DayHeader(Fmt.dayLabel(day, today), stringResource(R.string.history_surmontee, won, cravings.size, if (won > 1) "s" else ""), Modifier.animateItem()) }
+                    item(key = "h-c-$day") { DayHeader(Fmt.dayLabel(day, today), pluralStringResource(R.plurals.cravings_overcome_ratio, won, won, cravings.size), Modifier.animateItem()) }
                     items(cravings, key = { "c-${it.id}" }) { craving ->
                         Dismissable(
                             onDelete = {

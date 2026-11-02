@@ -1,5 +1,6 @@
 package com.karelisio.exit.data
 
+import com.karelisio.exit.plural
 import androidx.room.withTransaction
 import com.karelisio.exit.R
 import com.karelisio.exit.str
@@ -95,7 +96,7 @@ class ExitRepository(
                 reasons = reasons.trim(),
             ),
         )
-        if (!current.onboardingDone) event(PlanEventType.START, str(R.string.data_debut_du_plan_cigarettes_par, cigsPerDay))
+        if (!current.onboardingDone) event(PlanEventType.START, plural(R.plurals.plan_start_message, cigsPerDay, cigsPerDay))
         changed()
     }
 

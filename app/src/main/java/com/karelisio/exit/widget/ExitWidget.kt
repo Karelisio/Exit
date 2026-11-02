@@ -1,5 +1,6 @@
 package com.karelisio.exit.widget
 
+import com.karelisio.exit.plural
 import com.karelisio.exit.str
 import android.content.Context
 import android.content.Intent
@@ -199,7 +200,7 @@ private fun Status(state: WidgetState, big: Boolean, center: Boolean = false) {
             Chronometer(base = start, countDown = false, color = valueColor, size = valueSize)
         } else {
             Text(
-                str(R.string.widget_jours, streakDays(state)),
+                streakDays(state).toInt().let { plural(R.plurals.days_count, it, it) },
                 style = TextStyle(color = valueColor, fontSize = valueSize, fontWeight = FontWeight.Bold, textAlign = align),
                 maxLines = 1,
             )

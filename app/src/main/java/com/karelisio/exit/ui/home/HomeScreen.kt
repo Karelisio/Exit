@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.home
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.domain.label
 import com.karelisio.exit.domain.title
 import com.karelisio.exit.domain.description
@@ -256,7 +257,7 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    if (total == 0) stringResource(R.string.home_une_envie_le_mode_sos) else stringResource(R.string.home_envie_surmontee, total, if (total > 1) "s" else "", if (total > 1) "s" else ""),
+                                    if (total == 0) stringResource(R.string.home_une_envie_le_mode_sos) else pluralStringResource(R.plurals.cravings_overcome, total, total),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
@@ -502,7 +503,7 @@ private fun QuitHero(streakStart: Long?, now: Long, onSlip: () -> Unit, modifier
                     style = MaterialTheme.typography.displayLarge.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                Text(if (days <= 1) stringResource(R.string.home_jour_sans_fumer) else stringResource(R.string.progress_jours_sans_fumer), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Text(pluralStringResource(R.plurals.days_smoke_free_label, days.toInt()), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(
                     "+ ${Fmt.clock(rest)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
@@ -605,7 +606,7 @@ private fun SlipSheet(slip: SmokeLogged, d: AppData, onDismiss: () -> Unit, vm: 
             Text(stringResource(R.string.home_ca_arrive_ca_ne_t), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(8.dp))
             Text(
-                stringResource(R.string.home_tes_jours_sans_fumer_tes, gains.smokeFreeDays, Fmt.money(gains.money)) +
+                pluralStringResource(R.plurals.slip_kept, gains.smokeFreeDays, gains.smokeFreeDays, Fmt.money(gains.money)) +
                     stringResource(R.string.home_une_cigarette_n_efface_pas),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,

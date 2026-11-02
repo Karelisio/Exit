@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.review
 
+import com.karelisio.exit.plural
 import com.karelisio.exit.str
 import androidx.compose.ui.res.stringResource
 import com.karelisio.exit.R
@@ -71,7 +72,7 @@ fun ReviewScreen(vm: AppViewModel, nav: Navigator) {
                         }
                         Spacer(Modifier.height(12.dp))
                         Text(stringResource(R.string.review_du_au, Fmt.dayShort(review.start), Fmt.dayShort(review.end)), style = MaterialTheme.typography.labelLarge, color = on)
-                        CountUpText(review.smokes.toDouble(), { str(R.string.review_cigarettes, it.toInt()) }, MaterialTheme.typography.displaySmall, color = on)
+                        CountUpText(review.smokes.toDouble(), { plural(R.plurals.cigarettes_count, it.toInt(), it.toInt()) }, MaterialTheme.typography.displaySmall, color = on)
                         val change = review.change
                         Text(
                             when {

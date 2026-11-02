@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.settings
 
+import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.str
 import androidx.compose.ui.res.stringResource
 import com.karelisio.exit.R
@@ -163,7 +164,7 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             item { Row(Icons.Rounded.Route, MaterialShapes.Pill, stringResource(R.string.settings_mon_plan), stringResource(R.string.settings_date_paliers_ajustements), Modifier.cascade(3), onClick = nav::plan) }
             item {
                 val count = c.reasons.lines().count { it.isNotBlank() }
-                Row(Icons.Rounded.Favorite, MaterialShapes.Heart, stringResource(R.string.settings_mes_raisons_d_arreter), if (count == 0) stringResource(R.string.settings_rappelees_dans_le_sos_et) else stringResource(R.string.settings_raison, count, if (count > 1) "s" else "")) { reasonsEdit = true }
+                Row(Icons.Rounded.Favorite, MaterialShapes.Heart, stringResource(R.string.settings_mes_raisons_d_arreter), if (count == 0) stringResource(R.string.settings_rappelees_dans_le_sos_et) else pluralStringResource(R.plurals.reasons_count, count, count)) { reasonsEdit = true }
             }
 
             item { SectionTitle(stringResource(R.string.settings_ma_journee)) }
