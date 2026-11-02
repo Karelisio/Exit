@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La volute se dessine depuis la braise, puis la pointe de flèche apparaît. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_icon">
+    <target
+        android:name="smoke"
+        android:animation="@animator/splash_smoke" />
+    <target
+        android:name="arrow"
+        android:animation="@animator/splash_arrow" />
+</animated-vector>

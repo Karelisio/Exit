@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="exit_background">#FFF4FBF7</color>
+    <color name="splash_background">#FF0E5E4E</color>
+    <color name="icon_bg_start">#FF0F6B57</color>
+    <color name="icon_bg_end">#FF1F5F8B</color>
+    <color name="icon_smoke">#FFA6F4D4</color>
+    <color name="icon_filter">#FFF4B07A</color>
+    <color name="icon_ember">#FFFF6F43</color>
+</resources>

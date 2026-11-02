@@ -1,0 +1,21 @@
+# Gradle / Android Studio
+.gradle/
+.kotlin/
+build/
+/local.properties
+.idea/
+*.iml
+captures/
+.cxx/
+.externalNativeBuild/
+.DS_Store
+
+# Secrets : jamais commités (fournis via les secrets GitHub)
+*.jks
+*.keystore
+*.p12
+*.pem
+*.b64
+keystore.properties
+.env
+.env.*

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Exit</string>
+    <string name="widget_name">Exit</string>
+    <string name="widget_description">Minuteur « prochaine autorisée », bouton +1 et compteur du jour</string>
+    <string name="shortcut_sos">SOS envie</string>
+</resources>
