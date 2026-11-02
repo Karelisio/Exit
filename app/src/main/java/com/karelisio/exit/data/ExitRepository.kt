@@ -42,6 +42,7 @@ class ExitRepository(
     val smokes: Flow<List<SmokeEntity>> = db.smokes().observeAll()
     val cravings: Flow<List<CravingEntity>> = db.cravings().observeAll()
     val planEvents: Flow<List<PlanEventEntity>> = db.planEvents().observeAll()
+    val checkIns: Flow<List<CheckInEntity>> = db.checkIns().observeAll()
 
     suspend fun config(): ConfigEntity = db.config().get() ?: ConfigEntity()
 
@@ -170,6 +171,23 @@ class ExitRepository(
 
     suspend fun deleteCraving(craving: CravingEntity) {
         db.cravings().delete(craving)
+        changed()
+    }
+
+    // --- Point du jour (humeur, sevrage) -------------------------------------------------------
+
+    suspend fun saveCheckIn(checkIn: CheckInEntity) {
+        val existing = db.checkIns().forDay(checkIn.epochDay)
+        db.checkIns().upsert(checkIn.copy(id = existing?.id ?: 0))
+    }
+
+    // --- Plans d'urgence par déclencheur ---------------------------------------------------------
+
+    suspend fun setTriggerPlan(trigger: String, plan: String) {
+        val c = config()
+        val plans = TriggerPlans.parse(c.triggerPlans).toMutableMap()
+        if (plan.isBlank()) plans.remove(trigger) else plans[trigger] = plan.trim()
+        db.config().upsert(c.copy(triggerPlans = TriggerPlans.encode(plans)))
         changed()
     }
 
@@ -319,6 +337,7 @@ class ExitRepository(
             smokes = db.smokes().all(),
             cravings = db.cravings().all(),
             planEvents = db.planEvents().all(),
+            checkIns = db.checkIns().all(),
         ),
     )
 
@@ -330,10 +349,12 @@ class ExitRepository(
             db.smokes().clear()
             db.cravings().clear()
             db.planEvents().clear()
+            db.checkIns().clear()
             db.config().upsert(backup.config.copy(id = 0))
             db.smokes().insertAll(backup.smokes)
             db.cravings().insertAll(backup.cravings)
             db.planEvents().insertAll(backup.planEvents)
+            db.checkIns().insertAll(backup.checkIns)
         }
         event(PlanEventType.IMPORT, str(R.string.data_sauvegarde_restauree))
         changed()

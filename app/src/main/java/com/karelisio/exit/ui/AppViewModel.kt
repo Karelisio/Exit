@@ -29,6 +29,7 @@ data class AppData(
     val smokes: List<SmokeEntity>,
     val cravings: List<CravingEntity>,
     val events: List<PlanEventEntity>,
+    val checkIns: List<com.karelisio.exit.data.CheckInEntity> = emptyList(),
 ) {
     val lastSmokeAt: Long? get() = smokes.firstOrNull()?.timestamp
 }
@@ -41,8 +42,8 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val repo = container.repository
 
     /** null tant que la base n'a pas répondu (le splash reste affiché). */
-    val data: StateFlow<AppData?> = combine(repo.configOrNull, repo.smokes, repo.cravings, repo.planEvents) { c, s, cr, e ->
-        AppData(c ?: ConfigEntity(), s, cr, e)
+    val data: StateFlow<AppData?> = combine(repo.configOrNull, repo.smokes, repo.cravings, repo.planEvents, repo.checkIns) { c, s, cr, e, ci ->
+        AppData(c ?: ConfigEntity(), s, cr, e, ci)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 8)
@@ -104,6 +105,9 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
         val ok = container.autoBackup.runIfDue(force = true)
         _events.emit(UiEvent.Message(if (ok) str(R.string.ui_sauvegarde_enregistree) else str(R.string.ui_sauvegarde_impossible_choisis_a_nouveau)))
     }
+
+    fun saveCheckIn(checkIn: com.karelisio.exit.data.CheckInEntity) = viewModelScope.launch { repo.saveCheckIn(checkIn) }
+    fun setTriggerPlan(trigger: String, plan: String) = viewModelScope.launch { repo.setTriggerPlan(trigger, plan) }
 
     fun deleteCraving(craving: CravingEntity) = viewModelScope.launch { repo.deleteCraving(craving) }
 

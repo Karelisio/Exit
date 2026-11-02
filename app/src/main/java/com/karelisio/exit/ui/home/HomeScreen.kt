@@ -139,6 +139,8 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
     val logged by vm.lastLogged.collectAsStateWithLifecycle()
     val slip by vm.pendingSlip.collectAsStateWithLifecycle()
     var confirmQuit by remember { mutableStateOf(false) }
+    var checkIn by remember { mutableStateOf(false) }
+    val todayCheckIn = d.checkIns.firstOrNull { it.epochDay == today.toEpochDay() }
     var burst by remember { mutableIntStateOf(0) }
     var celebration by remember { mutableStateOf<String?>(null) }
 
@@ -225,6 +227,22 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                         }
                     }
                 }
+                item(key = "checkin") {
+                    ExitCard(color = MaterialTheme.colorScheme.surfaceContainerHigh, onClick = { checkIn = true }, modifier = Modifier.cascade(3).animateItem()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(todayCheckIn?.let { MOODS[it.mood - 1] } ?: "📝", style = MaterialTheme.typography.headlineMedium)
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.checkin_card_title), style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    if (todayCheckIn == null) stringResource(R.string.checkin_card_text) else stringResource(R.string.checkin_card_done, MOODS[todayCheckIn.mood - 1]),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
                 item(key = "plan") { PlanCard(c, snapshot, d, onClick = nav::plan, modifier = Modifier.cascade(3).animateItem()) }
                 item(key = "gains") {
                     ExitCard(onClick = { nav.tab(TopLevel.PROGRESS) }, modifier = Modifier.cascade(4).animateItem()) {
@@ -296,6 +314,13 @@ fun HomeScreen(vm: AppViewModel, nav: Navigator) {
                 delay(3500)
                 celebration = null
             }
+        }
+    }
+
+    if (checkIn) {
+        CheckInSheet(todayCheckIn, onDismiss = { checkIn = false }) {
+            vm.saveCheckIn(it)
+            checkIn = false
         }
     }
 

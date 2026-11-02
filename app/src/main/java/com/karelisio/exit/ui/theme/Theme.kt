@@ -55,14 +55,30 @@ val ExitShapes = Shapes(
 )
 
 @Composable
-fun ExitTheme(dynamicColor: Boolean = true, content: @Composable () -> Unit) {
+fun ExitTheme(dynamicColor: Boolean = true, themeMode: String = "AUTO", pureBlack: Boolean = false, content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val dark = isSystemInDarkTheme()
-    val colors = when {
+    val dark = when (themeMode) {
+        "LIGHT" -> false
+        "DARK" -> true
+        else -> isSystemInDarkTheme()
+    }
+    val base = when {
         dynamicColor && dark -> dynamicDarkColorScheme(context)
         dynamicColor -> dynamicLightColorScheme(context)
         dark -> ExitDarkColors
         else -> ExitLightColors
+    }
+    // Noir pur (OLED) : fonds et surfaces basses en noir, conteneurs légèrement relevés.
+    val colors = if (dark && pureBlack) {
+        base.copy(
+            background = androidx.compose.ui.graphics.Color.Black,
+            surface = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainerLowest = androidx.compose.ui.graphics.Color.Black,
+            surfaceContainerLow = androidx.compose.ui.graphics.Color(0xFF0B0B0B),
+            surfaceContainer = androidx.compose.ui.graphics.Color(0xFF121212),
+        )
+    } else {
+        base
     }
     var reduceMotion by remember { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textes de la 1.2.0 : plans d'urgence, rappels, point du jour, thème, graphiques interactifs. -->
+<resources>
+    <string name="risk_title">Moment à risque bientôt</string>
+    <string name="risk_text">Vers %1$d h, c\'est souvent un moment difficile.</string>
+    <string name="risk_trigger">Souvent avec %1$s %2$s.</string>
+    <string name="risk_plan">Ton plan : %1$s</string>
+    <string name="settings_risk_title">Rappels avant les moments à risque</string>
+    <string name="settings_risk_text">Une notification douce 10 minutes avant tes heures les plus difficiles</string>
+    <string name="settings_plans_title">Mes plans d\'urgence</string>
+    <string name="settings_plans_text">Une alternative prête pour chaque contexte</string>
+    <string name="plans_dialog_title">Mes plans d\'urgence</string>
+    <string name="plans_dialog_intro">Pour chaque contexte, ce que tu feras à la place. Le mode SOS et les rappels te le proposeront.</string>
+    <string name="plans_hint">Ex. : un verre d\'eau et 3 respirations</string>
+    <string name="sos_your_plan">Ton plan pour « %1$s »</string>
+    <string name="theme_title">Thème</string>
+    <string name="theme_auto">Auto</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_black_title">Noir pur</string>
+    <string name="theme_black_text">Pour les écrans OLED, en mode sombre</string>
+    <string name="checkin_card_title">Comment ça va aujourd\'hui ?</string>
+    <string name="checkin_card_text">Ton humeur et ton sevrage en 10 secondes.</string>
+    <string name="checkin_card_done">Humeur du jour : %1$s · touche pour modifier</string>
+    <string name="checkin_title">Point du jour</string>
+    <string name="checkin_mood">Ton humeur</string>
+    <string name="checkin_note">Une ligne sur ta journée (facultatif)</string>
+    <string name="checkin_withdrawal">Signes de sevrage (facultatif)</string>
+    <string name="checkin_withdrawal_hint">0 = rien, 3 = fort. Ils diminuent en général après 2 à 4 semaines.</string>
+    <string name="checkin_irritability">Irritabilité</string>
+    <string name="checkin_sleep">Sommeil difficile</string>
+    <string name="checkin_hunger">Faim</string>
+    <string name="checkin_anxiety">Nervosité, anxiété</string>
+    <string name="checkin_focus">Concentration difficile</string>
+    <string name="checkin_save">Enregistrer</string>
+    <string name="mood_chart_title">Humeur et sevrage (30 jours)</string>
+    <string name="mood_chart_empty">Fais le point du jour sur l\'accueil : ta courbe apparaîtra ici.</string>
+    <string name="mood_chart_legend">— humeur · - - sevrage</string>
+    <string name="mood_detail">%1$s : humeur %2$s, sevrage %3$s / 3</string>
+    <string name="chart_tap_hint">Touche ou glisse sur le graphique pour le détail</string>
+    <string name="chart_bar_detail">%1$s : %2$s</string>
+    <string name="chart_hour_detail">%1$d h : %2$s, %3$s</string>
+    <string name="chart_plan_detail">%1$s : objectif %2$s, réel %3$s</string>
+</resources>

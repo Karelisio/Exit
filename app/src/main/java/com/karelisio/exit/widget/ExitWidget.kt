@@ -150,14 +150,8 @@ private fun WidgetContent(state: WidgetState) {
                 str(R.string.widget_ouvre_exit_pour_commencer),
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, textAlign = TextAlign.Center),
             )
-            size.width < 100.dp -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                ActionButton(state, 44)
-                Spacer(GlanceModifier.height(4.dp))
-                Text(
-                    if (state.phase == Phase.QUIT) str(R.string.components_j, streakDays(state)) else "${state.todayCount}",
-                    style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold),
-                )
-            }
+            // 1×1 : uniquement le bouton et son anneau, dimensionnés pour tenir dans la case.
+            size.width < 100.dp -> ActionButton(state, (minOf(size.width, size.height).value - 20).toInt().coerceIn(32, 72))
             size.width >= 180.dp -> Row(
                 modifier = GlanceModifier.fillMaxSize().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -168,7 +162,7 @@ private fun WidgetContent(state: WidgetState) {
                     Counter(state)
                 }
                 Spacer(GlanceModifier.width(8.dp))
-                ActionButton(state, if (size.height >= 100.dp) 64 else 46)
+                ActionButton(state, if (size.height >= 100.dp) 76 else 52)
             }
             else -> Column(
                 modifier = GlanceModifier.fillMaxSize(),
@@ -178,7 +172,7 @@ private fun WidgetContent(state: WidgetState) {
                 Status(state, big = false, center = true)
                 Counter(state, center = true)
                 Spacer(GlanceModifier.height(6.dp))
-                ActionButton(state, 44)
+                ActionButton(state, 56)
             }
         }
     }
@@ -261,14 +255,14 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
     Box(contentAlignment = Alignment.Center) {
     if (showRing) {
         Image(
-            provider = ImageProvider(ringBitmap(context, (sizeDp + 12), state.progress, ringColor, trackColor)),
+            provider = ImageProvider(ringBitmap(context, sizeDp, state.progress, ringColor, trackColor)),
             contentDescription = null,
-            modifier = GlanceModifier.size((sizeDp + 12).dp),
+            modifier = GlanceModifier.size(sizeDp.dp),
         )
     }
     Box(
         modifier = GlanceModifier
-            .size(sizeDp.dp)
+            .size((sizeDp - 12).dp)
             .background(ImageProvider(R.drawable.widget_circle), colorFilter = ColorFilter.tint(GlanceTheme.colors.primaryContainer))
             .clickable(action)
             .semantics { contentDescription = description },
@@ -278,7 +272,7 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
             Image(
                 provider = ImageProvider(R.drawable.ic_sos),
                 contentDescription = null,
-                modifier = GlanceModifier.size((sizeDp * 0.5).dp),
+                modifier = GlanceModifier.size(((sizeDp - 12) * 0.5).dp),
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onPrimaryContainer),
             )
         } else {
@@ -286,7 +280,7 @@ private fun ActionButton(state: WidgetState, sizeDp: Int) {
                 "+1",
                 style = TextStyle(
                     color = GlanceTheme.colors.onPrimaryContainer,
-                    fontSize = (sizeDp * 0.36).sp,
+                    fontSize = ((sizeDp - 12) * 0.38).sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                 ),

@@ -21,6 +21,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Bedtime
@@ -113,6 +118,7 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
         }
     }
     var reasonsEdit by remember { mutableStateOf(false) }
+    var plansEdit by remember { mutableStateOf(false) }
     var backupMenu by remember { mutableStateOf(false) }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
@@ -165,6 +171,13 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             item {
                 val count = c.reasons.lines().count { it.isNotBlank() }
                 Row(Icons.Rounded.Favorite, MaterialShapes.Heart, stringResource(R.string.settings_mes_raisons_d_arreter), if (count == 0) stringResource(R.string.settings_rappelees_dans_le_sos_et) else pluralStringResource(R.plurals.reasons_count, count, count)) { reasonsEdit = true }
+            }
+            item {
+                val count = com.karelisio.exit.data.TriggerPlans.parse(c.triggerPlans).size
+                Row(
+                    Icons.Rounded.Lightbulb, MaterialShapes.Sunny, stringResource(R.string.settings_plans_title),
+                    if (count == 0) stringResource(R.string.settings_plans_text) else androidx.compose.ui.res.pluralStringResource(R.plurals.plans_count, count, count),
+                ) { plansEdit = true }
             }
 
             item { SectionTitle(stringResource(R.string.settings_ma_journee)) }
@@ -234,9 +247,35 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
                     vm.updateConfig { it.copy(notifyMilestones = on) }
                 }
             }
+            item {
+                Toggle(Icons.Rounded.NotificationsActive, MaterialShapes.Clover8Leaf, stringResource(R.string.settings_risk_title), stringResource(R.string.settings_risk_text), c.riskReminders) { on ->
+                    vm.updateConfig { it.copy(riskReminders = on) }
+                }
+            }
             item { Row(Icons.Rounded.Security, MaterialShapes.Gem, stringResource(R.string.settings_autorisations), stringResource(R.string.settings_notifications_alarmes_batterie_mises_a), onClick = nav::permissions) }
 
             item { SectionTitle(stringResource(R.string.settings_apparence)) }
+            item {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text(stringResource(R.string.theme_title), style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(6.dp))
+                    val modes = listOf("AUTO" to R.string.theme_auto, "LIGHT" to R.string.theme_light, "DARK" to R.string.theme_dark)
+                    androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        modes.forEachIndexed { i, (mode, label) ->
+                            SegmentedButton(
+                                selected = c.themeMode == mode,
+                                onClick = { vm.updateConfig { it.copy(themeMode = mode) } },
+                                shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(i, modes.size),
+                            ) { Text(stringResource(label)) }
+                        }
+                    }
+                }
+            }
+            item {
+                Toggle(Icons.Rounded.DarkMode, MaterialShapes.Circle, stringResource(R.string.theme_black_title), stringResource(R.string.theme_black_text), c.pureBlack) { on ->
+                    vm.updateConfig { it.copy(pureBlack = on) }
+                }
+            }
             item {
                 Toggle(Icons.Rounded.Palette, MaterialShapes.Puffy, stringResource(R.string.settings_couleurs_du_fond_d_ecran), stringResource(R.string.settings_sinon_vert_menthe_et_bleu), c.dynamicColor) { on ->
                     vm.updateConfig { it.copy(dynamicColor = on) }
@@ -300,6 +339,38 @@ fun SettingsScreen(vm: AppViewModel, nav: Navigator) {
             edit = null
         }
         null -> Unit
+    }
+    if (plansEdit) {
+        val current = remember { com.karelisio.exit.data.TriggerPlans.parse(c.triggerPlans) }
+        val drafts = remember { androidx.compose.runtime.mutableStateMapOf<String, String>().apply { putAll(current) } }
+        AlertDialog(
+            onDismissRequest = { plansEdit = false },
+            title = { Text(stringResource(R.string.plans_dialog_title)) },
+            text = {
+                Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.plans_dialog_intro), style = MaterialTheme.typography.bodyMedium)
+                    com.karelisio.exit.domain.Trigger.entries.forEach { t ->
+                        OutlinedTextField(
+                            value = drafts[t.name].orEmpty(),
+                            onValueChange = { drafts[t.name] = it.take(120) },
+                            label = { Text("${t.emoji} ${stringResource(t.labelRes)}") },
+                            placeholder = { Text(stringResource(R.string.plans_hint)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    com.karelisio.exit.domain.Trigger.entries.forEach { t ->
+                        val v = drafts[t.name].orEmpty()
+                        if (v != current[t.name].orEmpty()) vm.setTriggerPlan(t.name, v)
+                    }
+                    plansEdit = false
+                }) { Text(stringResource(android.R.string.ok)) }
+            },
+            dismissButton = { TextButton(onClick = { plansEdit = false }) { Text(stringResource(android.R.string.cancel)) } },
+        )
     }
     if (reasonsEdit) {
         var text by remember { mutableStateOf(c.reasons) }

@@ -39,6 +39,17 @@ class AlarmReceiver : BroadcastReceiver() {
                             HealthMilestones.reached(minutes).lastOrNull()?.let(container.notifications::showMilestone)
                         }
                     }
+                    ACTION_RISK -> {
+                        val now = System.currentTimeMillis()
+                        val hour = java.time.LocalTime.now().plusMinutes(15).hour
+                        val risk = com.karelisio.exit.domain.StatsCalculator.riskHours(repo.allSmokes(), repo.allCravings(), now, java.time.ZoneId.systemDefault())
+                            .firstOrNull { it.first == hour }
+                        val minute = AlarmScheduler.minuteOfDay(now)
+                        if (config.riskReminders && risk != null && isAwake(minute, config.wakeMinutes, config.sleepMinutes)) {
+                            val plan = risk.second?.let { com.karelisio.exit.data.TriggerPlans.parse(config.triggerPlans)[it.name] }
+                            container.notifications.showRiskReminder(hour, risk.second, plan)
+                        }
+                    }
                     ACTION_WEEKLY -> {
                         val review = com.karelisio.exit.domain.WeeklyReviewCalculator.compute(
                             config, repo.allSmokes(), repo.allCravings(), java.time.LocalDate.now(), java.time.ZoneId.systemDefault(),
@@ -62,6 +73,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_MIDNIGHT = "com.karelisio.exit.MIDNIGHT"
         const val ACTION_WIDGET_TICK = "com.karelisio.exit.WIDGET_TICK"
         const val ACTION_WEEKLY = "com.karelisio.exit.WEEKLY"
+        const val ACTION_RISK = "com.karelisio.exit.RISK"
 
         /** Pas de notification la nuit : le minuteur affiche « OK », c'est suffisant. */
         fun isAwake(minute: Int, wake: Int, sleep: Int): Boolean =

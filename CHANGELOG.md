@@ -3,6 +3,16 @@
 Chaque section `## X.Y.Z` devient le texte de la release GitHub correspondante, affiché dans l'appli
 au moment de la mise à jour.
 
+## 1.2.0
+
+- Plans d'urgence : une alternative par contexte (café, stress…), proposée dans le SOS et les rappels.
+- Rappels doux 10 minutes avant tes heures à risque (à activer dans Réglages → Notifications).
+- Point du jour : humeur, une ligne de journal et signes de sevrage, avec leur courbe sur 30 jours.
+- Thème clair, sombre ou automatique, et noir pur pour les écrans OLED.
+- Graphiques interactifs : touche ou glisse pour voir le détail d'un jour, d'une heure ou du plan.
+- Widget 1×1 qui n'est plus coupé, textes de l'onboarding lisibles en mode sombre.
+- Formulations sans point médian.
+
 ## 1.1.0
 
 - Mes raisons d'arrêter : saisies à l'onboarding, rappelées dans le SOS et les notifications.

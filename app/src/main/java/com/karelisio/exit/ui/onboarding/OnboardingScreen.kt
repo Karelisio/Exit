@@ -164,7 +164,9 @@ fun OnboardingScreen(vm: AppViewModel) {
         vm.completeOnboarding(cigsPerDay, priceValue ?: 13.0, perPack, if (hasDate) LocalDate.ofEpochDay(quitEpochDay) else null, step, stepMinutes, reasons)
     }
 
-    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).systemBarsPadding().imePadding()) {
+    // Surface : fournit la couleur de texte du thème (lisible en clair comme en sombre).
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+    Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             AnimatedVisibility(current.permission != null && !permissions.isGranted(current.permission!!), enter = fadeIn(), exit = fadeOut()) {
@@ -246,6 +248,7 @@ fun OnboardingScreen(vm: AppViewModel) {
             }
         }
     }
+}
 }
 
 @Composable

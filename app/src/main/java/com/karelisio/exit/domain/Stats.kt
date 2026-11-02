@@ -96,6 +96,21 @@ object StatsCalculator {
         return firsts.takeIf { it.isNotEmpty() }?.average()?.toInt()
     }
 
+    /**
+     * Heures à risque : jusqu'à 2 heures où cigarettes et envies se concentrent sur les 14 derniers jours
+     * (au moins 4 occurrences), avec le déclencheur le plus fréquent à cette heure.
+     */
+    fun riskHours(smokes: List<SmokeEntity>, cravings: List<CravingEntity>, now: Long, zone: ZoneId): List<Pair<Int, Trigger?>> {
+        val since = now - 14 * DAY_MS
+        val events = smokes.filter { it.timestamp >= since }.map { it.timestamp to it.trigger } +
+            cravings.filter { it.timestamp >= since }.map { it.timestamp to it.trigger }
+        return events.groupBy { java.time.Instant.ofEpochMilli(it.first).atZone(zone).hour }
+            .filterValues { it.size >= 4 }
+            .entries.sortedByDescending { it.value.size }
+            .take(2)
+            .map { (hour, list) -> hour to list.mapNotNull { Trigger.of(it.second) }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key }
+    }
+
     fun hourDistribution(timestamps: List<Long>, zone: ZoneId): IntArray {
         val hours = IntArray(24)
         timestamps.forEach { hours[java.time.Instant.ofEpochMilli(it).atZone(zone).hour]++ }

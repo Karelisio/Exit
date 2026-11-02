@@ -65,6 +65,17 @@ class AlarmScheduler(private val context: Context) {
             if (tick < next) alarmManager.set(AlarmManager.RTC, tick, tickIntent)
         }
 
+        // Rappel doux 10 minutes avant la prochaine heure à risque.
+        val riskIntent = pending(AlarmReceiver.ACTION_RISK, REQ_RISK)
+        alarmManager.cancel(riskIntent)
+        if (config.onboardingDone && config.riskReminders) {
+            val hours = com.karelisio.exit.domain.StatsCalculator.riskHours(repository.allSmokes(), repository.allCravings(), now, zone).map { it.first }
+            val today = PlanEngine.day(now, zone)
+            val next = (0L..1L).flatMap { d -> hours.map { h -> today.plusDays(d).atTime(h, 0).atZone(zone).toInstant().toEpochMilli() - 10 * MINUTE_MS } }
+                .filter { it > now }.minOrNull()
+            if (next != null) alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, riskIntent)
+        }
+
         // Bilan de la semaine : dimanche à 18 h.
         if (config.onboardingDone) {
             var sunday = PlanEngine.day(now, zone).with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SUNDAY))
@@ -95,6 +106,7 @@ class AlarmScheduler(private val context: Context) {
         private const val REQ_MIDNIGHT = 102
         private const val REQ_TICK = 103
         private const val REQ_WEEKLY = 104
+        private const val REQ_RISK = 105
 
         /** Heure locale (minutes depuis minuit) d'un instant. */
         fun minuteOfDay(at: Long, zone: ZoneId = ZoneId.systemDefault()): Int {

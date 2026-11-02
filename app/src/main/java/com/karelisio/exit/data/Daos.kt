@@ -88,6 +88,27 @@ interface PlanEventDao {
 }
 
 @Dao
+interface CheckInDao {
+    @Query("SELECT * FROM checkins ORDER BY epochDay DESC")
+    fun observeAll(): Flow<List<CheckInEntity>>
+
+    @Query("SELECT * FROM checkins ORDER BY epochDay DESC")
+    suspend fun all(): List<CheckInEntity>
+
+    @Query("SELECT * FROM checkins WHERE epochDay = :day")
+    suspend fun forDay(day: Long): CheckInEntity?
+
+    @Upsert
+    suspend fun upsert(checkIn: CheckInEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(checkIns: List<CheckInEntity>)
+
+    @Query("DELETE FROM checkins")
+    suspend fun clear()
+}
+
+@Dao
 interface ConfigDao {
     @Query("SELECT * FROM config WHERE id = 0")
     fun observe(): Flow<ConfigEntity?>

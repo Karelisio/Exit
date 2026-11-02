@@ -1,5 +1,6 @@
 package com.karelisio.exit.ui.plan
 
+import com.karelisio.exit.ui.components.chartScrub
 import androidx.compose.ui.res.pluralStringResource
 import com.karelisio.exit.str
 import androidx.compose.ui.res.stringResource
@@ -164,7 +165,7 @@ fun PlanScreen(vm: AppViewModel, nav: Navigator) {
                         Spacer(Modifier.height(4.dp))
                         Legend()
                         Spacer(Modifier.height(12.dp))
-                        PlanChart(c, d.smokes, Modifier.fillMaxWidth().height(220.dp))
+                        PlanChart(c, d.smokes, Modifier.fillMaxWidth().height(250.dp))
                     }
                 }
                 item(key = "adjust") {
@@ -346,13 +347,32 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
         smokes.groupingBy { PlanEngine.day(it.timestamp, zone) }.eachCount().filterKeys { it >= start && it <= today }
     }
     val reveal = remember { Animatable(if (reduce) 1f else 0f) }
+    var selected by remember { mutableStateOf<Int?>(null) }
+    val dayCount = ChronoUnit.DAYS.between(start, end).toInt().coerceAtLeast(1) + 1
     LaunchedEffect(Unit) { reveal.animateTo(1f, tween(1200, easing = FastOutSlowInEasing)) }
 
     val primary = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
     val grid = MaterialTheme.colorScheme.outlineVariant
     val todayColor = MaterialTheme.colorScheme.tertiary
-    Box(modifier.semantics {
+    val selectedDay = selected?.let { start.plusDays(it.toLong()) }
+    Column(modifier) {
+    androidx.compose.animation.AnimatedContent(selectedDay, label = "planDetail") { day ->
+        Text(
+            day?.let {
+                stringResource(
+                    R.string.chart_plan_detail,
+                    Fmt.dayLabel(it),
+                    "%.1f".format(Fmt.locale, PlanEngine.targetPerDay(c, it, zone)),
+                    if (it <= today) (actual[it] ?: 0).toString() else "—",
+                )
+            } ?: stringResource(R.string.chart_tap_hint),
+            style = if (day != null) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelMedium,
+            color = if (day != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+    Box(Modifier.fillMaxWidth().weight(1f).chartScrub(dayCount, selected) { selected = it }.semantics {
         contentDescription = str(R.string.plan_courbe_de_reduction_objectif_de, (curve.firstOrNull()?.second ?: 0.0).roundToInt()) +
             str(R.string.plan_zero_le, curve.lastOrNull()?.first?.let { Fmt.dayFull(it) } ?: "—")
     }) {
@@ -367,6 +387,7 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
             }
             val tx = x(today)
             drawLine(todayColor, Offset(tx, 0f), Offset(tx, size.height), 2.dp.toPx())
+            selectedDay?.let { drawLine(grid, Offset(x(it), 0f), Offset(x(it), size.height), 2.dp.toPx()) }
             clipRect(right = size.width * reveal.value) {
                 val visible = curve.filter { it.first >= start }
                 if (visible.size > 1) {
@@ -393,6 +414,7 @@ private fun PlanChart(c: ConfigEntity, smokes: List<SmokeEntity>, modifier: Modi
             modifier = Modifier.align(Alignment.TopStart),
         )
     }
+}
 }
 
 @Composable
