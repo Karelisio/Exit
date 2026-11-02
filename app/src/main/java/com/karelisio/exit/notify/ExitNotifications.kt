@@ -113,6 +113,25 @@ class ExitNotifications(private val context: Context) {
         manager.notify(ID_PLAN, notification)
     }
 
+    fun showRiskReminder(hour: Int, trigger: com.karelisio.exit.domain.Trigger?, plan: String?) {
+        if (!canPost()) return
+        val text = buildString {
+            append(str(R.string.risk_text, hour))
+            trigger?.let { append(' '); append(str(R.string.risk_trigger, it.emoji, str(it.labelRes))) }
+            plan?.let { append('\n'); append(str(R.string.risk_plan, it)) }
+        }
+        val notification = NotificationCompat.Builder(context, CHANNEL_PLAN)
+            .setSmallIcon(R.drawable.ic_stat_exit)
+            .setContentTitle(str(R.string.risk_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(openApp())
+            .addAction(R.drawable.ic_sos, str(R.string.shortcut_sos), openApp(MainActivity.DEST_SOS, REQ_SOS))
+            .setAutoCancel(true)
+            .build()
+        manager.notify(ID_RISK, notification)
+    }
+
     fun showWeeklyReview(review: com.karelisio.exit.domain.WeeklyReview) {
         if (!canPost()) return
         val text = buildString {
@@ -155,6 +174,7 @@ class ExitNotifications(private val context: Context) {
         private const val ID_PLAN = 3
         private const val ID_UPDATE = 4
         private const val ID_REVIEW = 5
+        private const val ID_RISK = 6
 
         private const val REQ_ACTION_SMOKE = 10
         private const val REQ_SOS = 11

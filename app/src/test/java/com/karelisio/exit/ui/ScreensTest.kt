@@ -46,6 +46,12 @@ class ScreensTest {
         compose.waitForIdle()
         if (System.getProperty("exit.screenshots") != "true") return
         val dir = File(System.getProperty("exit.screenshots.dir") ?: "build/screenshots").apply { mkdirs() }
+        // Attend que l'écran ait une taille (données encore en cours de chargement au tout premier rendu).
+        repeat(100) {
+            if (compose.onRoot().fetchSemanticsNode().size.width > 0) return@repeat
+            compose.mainClock.advanceTimeBy(100)
+            Thread.sleep(50)
+        }
         val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
@@ -105,7 +111,9 @@ class ScreensTest {
         shot("13-stats")
         compose.onAllNodesWithText("Accueil")[0].performClick()
         compose.mainClock.advanceTimeBy(1000)
-        compose.onNodeWithText("Ton plan").performClick()
+        clickWhenReady(androidx.compose.ui.test.hasContentDescription("Réglages"))
+        compose.mainClock.advanceTimeBy(800)
+        clickWhenReady(androidx.compose.ui.test.hasText("Mon plan"))
         shot("14-plan")
     }
 
@@ -113,7 +121,7 @@ class ScreensTest {
     fun sos() {
         seed()
         setApp()
-        compose.onNode(androidx.compose.ui.test.hasContentDescription("SOS envie") or androidx.compose.ui.test.hasText("SOS envie"), useUnmergedTree = true).performClick()
+        clickWhenReady(androidx.compose.ui.test.hasText("SOS envie"))
         shot("20-sos")
         compose.onNodeWithText("L'envie est passée 💪").performClick()
         compose.mainClock.advanceTimeBy(700)
@@ -148,10 +156,27 @@ class ScreensTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun darkOnboarding() {
+        setApp()
+        shot("51-onboarding-dark")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun darkHome() {
         seed()
         setApp()
         shot("50-home-dark")
+    }
+
+    /** Attend que le nœud apparaisse (chargement des données) puis clique dessus. */
+    private fun clickWhenReady(matcher: androidx.compose.ui.test.SemanticsMatcher) {
+        repeat(50) {
+            if (compose.onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()) return@repeat
+            compose.mainClock.advanceTimeBy(200)
+            Thread.sleep(20)
+        }
+        compose.onAllNodes(matcher, useUnmergedTree = true)[0].performClick()
     }
 
     private fun androidx.compose.ui.test.junit4.AndroidComposeTestRule<*, *>.onNodeWithContentDescriptionSafe(desc: String) {

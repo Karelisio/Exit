@@ -98,4 +98,32 @@ data class ConfigEntity(
     /** Dossier choisi pour la sauvegarde automatique (URI SAF), null = désactivée. */
     val autoBackupUri: String? = null,
     val lastAutoBackupAt: Long? = null,
+    /** Plans d'urgence par déclencheur (JSON : nom du déclencheur -> alternative). */
+    @ColumnInfo(defaultValue = "") val triggerPlans: String = "",
+    /** AUTO, LIGHT ou DARK. */
+    @ColumnInfo(defaultValue = "AUTO") val themeMode: String = "AUTO",
+    /** Fond noir pur en mode sombre (écrans OLED). */
+    @ColumnInfo(defaultValue = "0") val pureBlack: Boolean = false,
+    /** Rappels doux juste avant les heures à risque. */
+    @ColumnInfo(defaultValue = "0") val riskReminders: Boolean = false,
 )
+
+/** Point du jour : humeur et symptômes de sevrage (0 = aucun, 3 = fort). Un par jour. */
+@Serializable
+@Entity(tableName = "checkins", indices = [Index(value = ["epochDay"], unique = true)])
+data class CheckInEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val timestamp: Long,
+    /** 1 (très mal) à 5 (très bien). */
+    val mood: Int,
+    val note: String = "",
+    val irritability: Int = 0,
+    val sleep: Int = 0,
+    val hunger: Int = 0,
+    val anxiety: Int = 0,
+    val focus: Int = 0,
+) {
+    /** Intensité moyenne du sevrage (0 à 3). */
+    val withdrawal: Float get() = (irritability + sleep + hunger + anxiety + focus) / 5f
+}

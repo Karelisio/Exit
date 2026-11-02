@@ -57,4 +57,12 @@
         <item quantity="one">On part de %1$d cigarette par jour</item>
         <item quantity="other">On part de %1$d cigarettes par jour</item>
     </plurals>
+    <plurals name="plans_count">
+        <item quantity="one">%1$d plan prêt</item>
+        <item quantity="other">%1$d plans prêts</item>
+    </plurals>
+    <plurals name="cravings_count">
+        <item quantity="one">%1$d envie</item>
+        <item quantity="other">%1$d envies</item>
+    </plurals>
 </resources>

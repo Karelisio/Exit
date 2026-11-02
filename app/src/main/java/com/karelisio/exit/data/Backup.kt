@@ -12,6 +12,7 @@ data class Backup(
     val smokes: List<SmokeEntity>,
     val cravings: List<CravingEntity>,
     val planEvents: List<PlanEventEntity> = emptyList(),
+    val checkIns: List<CheckInEntity> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "exit-backup"

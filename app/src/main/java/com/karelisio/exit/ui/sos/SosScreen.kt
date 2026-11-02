@@ -141,6 +141,7 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
     var burst by remember { mutableIntStateOf(0) }
     var victories by rememberSaveable { mutableIntStateOf(0) }
     var intensity by rememberSaveable { mutableStateOf<Int?>(null) }
+    val plans = remember(c.triggerPlans) { com.karelisio.exit.data.TriggerPlans.parse(c.triggerPlans) }
     val reasons = remember(c.reasons) { c.reasons.lines().map { it.trim() }.filter { it.isNotEmpty() } }
 
     // L'écran reste allumé pendant l'exercice.
@@ -182,6 +183,7 @@ fun SosScreen(vm: AppViewModel, nav: Navigator) {
                             exhale = c.breathExhaleSeconds,
                             hapticsOn = c.breathHaptics,
                             reasons = reasons,
+                            plans = plans,
                             intensity = intensity,
                             onIntensity = { intensity = it },
                             trigger = trigger,
@@ -221,6 +223,7 @@ private fun Running(
     exhale: Float,
     hapticsOn: Boolean,
     reasons: List<String>,
+    plans: Map<String, String>,
     intensity: Int?,
     onIntensity: (Int?) -> Unit,
     trigger: Trigger?,
@@ -262,6 +265,19 @@ private fun Running(
         if (reasons.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             ReasonCard(reasons)
+        }
+        val plan = trigger?.let { plans[it.name] }
+        AnimatedVisibility(plan != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        stringResource(R.string.sos_your_plan, trigger?.let { stringResource(it.labelRes) }.orEmpty()),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Text(plan.orEmpty(), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Center)
+                }
+            }
         }
         Spacer(Modifier.height(12.dp))
         IntensityRow(stringResource(R.string.sos_intensite_de_l_envie), intensity, onIntensity)
@@ -305,7 +321,7 @@ private fun Running(
         }
         Spacer(Modifier.height(12.dp))
         AnimatedContent(tab, label = "distraction") { t ->
-            if (t == 0) BubbleGame(Modifier.fillMaxWidth().height(240.dp)) else Ideas()
+            if (t == 0) BubbleGame(Modifier.fillMaxWidth().height(240.dp)) else Ideas(plans.values.toList())
         }
 
         Spacer(Modifier.height(12.dp))
@@ -451,8 +467,10 @@ private fun ReasonCard(reasons: List<String>) {
 }
 
 @Composable
-private fun Ideas() {
-    var index by rememberSaveable { mutableIntStateOf((0 until IDEAS.size).random()) }
+private fun Ideas(mine: List<String>) {
+    // Tes plans d'urgence d'abord, puis les idées générales.
+    val ideas = remember(mine) { mine + IDEAS }
+    var index by rememberSaveable { mutableIntStateOf(if (mine.isNotEmpty()) 0 else (0 until IDEAS.size).random()) }
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
             AnimatedContent(
@@ -461,7 +479,7 @@ private fun Ideas() {
                 label = "idea",
             ) { i ->
                 Text(
-                    IDEAS[i],
+                    ideas[i % ideas.size],
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     textAlign = TextAlign.Center,
@@ -470,7 +488,7 @@ private fun Ideas() {
             }
         }
         Spacer(Modifier.height(8.dp))
-        FilledTonalButton(onClick = { index = (index + 1 + (0 until IDEAS.size - 1).random()) % IDEAS.size }, shapes = ButtonDefaults.shapes()) {
+        FilledTonalButton(onClick = { index = (index + 1) % ideas.size }, shapes = ButtonDefaults.shapes()) {
             Text(stringResource(R.string.sos_une_autre_idee))
         }
     }

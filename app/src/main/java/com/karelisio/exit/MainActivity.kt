@@ -71,7 +71,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val data by vm.data.collectAsStateWithLifecycle()
             val pending by destination.collectAsStateWithLifecycle()
-            ExitTheme(dynamicColor = data?.config?.dynamicColor ?: true) {
+            ExitTheme(
+                dynamicColor = data?.config?.dynamicColor ?: true,
+                themeMode = data?.config?.themeMode ?: "AUTO",
+                pureBlack = data?.config?.pureBlack ?: false,
+            ) {
                 ExitRoot(vm, pending) { destination.value = null }
             }
         }

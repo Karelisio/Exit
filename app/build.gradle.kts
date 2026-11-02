@@ -140,6 +140,8 @@ dependencies {
 tasks.withType<Test>().configureEach {
     // Robolectric manipule des descripteurs de fichiers internes au JDK.
     jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    // Rendu natif des écrans (captures) : plus de mémoire que la valeur par défaut.
+    maxHeapSize = "2g"
     // Captures d'écran (rendu Robolectric) : -PexitScreenshots=true.
     systemProperty("exit.screenshots", providers.gradleProperty("exitScreenshots").orNull ?: "false")
     systemProperty("exit.screenshots.dir", layout.buildDirectory.dir("screenshots").get().asFile.absolutePath)

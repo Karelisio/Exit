@@ -64,7 +64,7 @@
     <string name="home_j_ai_fume_une_cigarette">J\'ai fumé une cigarette</string>
     <string name="home_j_en_fume_une">J\'en fume une</string>
     <string name="home_je_continue_mon_arret">Je continue mon arrêt</string>
-    <string name="home_je_me_suis_trompee_annuler">Je me suis trompé·e, annuler</string>
+    <string name="home_je_me_suis_trompee_annuler">Erreur de saisie, annuler</string>
     <string name="home_le_minuteur_laisse_place_au">Le minuteur laisse place au compteur de jours sans fumer. Si un écart arrive, rien n\'est perdu : on en parle, sans jugement.</string>
     <string name="home_merci_de_l_avoir_notee">Merci de l\'avoir notée. Le minuteur repart.</string>
     <string name="home_note_ta_prochaine_cigarette">note ta prochaine cigarette</string>
@@ -73,7 +73,7 @@
     <string name="home_passer_a_l_arret_complet">Passer à l\'arrêt complet</string>
     <string name="home_plan_reajuste_en_douceur">Plan réajusté en douceur</string>
     <string name="home_premiere_du_matin_pas_avant">☀️ Première du matin : pas avant %1$s</string>
-    <string name="home_prete">Prêt·e</string>
+    <string name="home_prete">C\'est parti</string>
     <string name="home_prochain_jalon">Prochain jalon : %1$s · %2$s</string>
     <string name="home_prochaine_cigarette_autorisee_a">Prochaine cigarette autorisée à %1$s</string>
     <string name="home_prochaine_dans">prochaine dans</string>
@@ -84,7 +84,7 @@
     <string name="home_tes_gains">Tes gains</string>
     <string name="home_ton_bilan_de_la_semaine">Ton bilan de la semaine est prêt</string>
     <string name="home_ton_corps_se_repare">Ton corps se répare</string>
-    <string name="home_ton_plan_arrive_a_zero">Ton plan arrive à zéro. Quand tu te sens prêt·e, passe à l\'arrêt complet : le compteur de jours sans fumer prend le relais.</string>
+    <string name="home_ton_plan_arrive_a_zero">Ton plan arrive à zéro. Quand tu le sens, passe à l\'arrêt complet : le compteur de jours sans fumer prend le relais.</string>
     <string name="home_tous_les_jalons_sont_atteints">Tous les jalons sont atteints. Respect.</string>
     <string name="home_tu_as_tenu_de_plus">Tu as tenu %1$s de plus que prévu. Bravo 💪</string>
     <string name="home_tu_y_es_presque">Tu y es presque 🌱</string>
@@ -306,7 +306,7 @@
     <string name="sos_apaisant_46">Apaisant 4·6</string>
     <string name="sos_bois_un_grand_verre_d">Bois un grand verre d\'eau, lentement.</string>
     <string name="sos_brosse_toi_les_dents_le">Brosse-toi les dents : le goût change tout.</string>
-    <string name="sos_c_est_ta_e_victoire">C\'est ta %1$se victoire. L\'envie est passée, toi tu es resté·e.</string>
+    <string name="sos_c_est_ta_e_victoire">C\'est ta %1$se victoire. L\'envie est passée, et tu as tenu bon.</string>
     <string name="sos_c_est_ta_premiere_victoire">C\'est ta première victoire. Elle compte énormément.</string>
     <string name="sos_ca_va_passer">Ça va passer.</string>
     <string name="sos_coherence_55">Cohérence 5·5</string>

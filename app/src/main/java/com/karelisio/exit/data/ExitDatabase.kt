@@ -7,16 +7,17 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SmokeEntity::class, CravingEntity::class, PlanEventEntity::class, ConfigEntity::class],
-    version = 2,
+    entities = [SmokeEntity::class, CravingEntity::class, PlanEventEntity::class, ConfigEntity::class, CheckInEntity::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class ExitDatabase : RoomDatabase() {
     abstract fun smokes(): SmokeDao
     abstract fun cravings(): CravingDao
     abstract fun planEvents(): PlanEventDao
     abstract fun config(): ConfigDao
+    abstract fun checkIns(): CheckInDao
 
     companion object {
         fun create(context: Context): ExitDatabase =

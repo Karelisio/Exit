@@ -55,6 +55,9 @@ class ExitDatabaseTest {
                 assertEquals("", config.reasons)
                 assertEquals(0, config.morningDelayMinutes)
                 assertNull(config.autoBackupUri)
+                assertEquals("AUTO", config.themeMode)
+                assertEquals("", config.triggerPlans)
+                assertTrue(db.checkIns().all().isEmpty())
                 // Les nouvelles colonnes s'écrivent normalement.
                 db.config().upsert(config.copy(reasons = "Mieux respirer", morningDelayMinutes = 30))
                 assertEquals("Mieux respirer", db.config().get()!!.reasons)
@@ -76,6 +79,8 @@ class ExitDatabaseTest {
             repoA.logCraving(true, "CAFE", null, 240, intensityStart = 4)
             repoA.setLastCravingEndIntensity(2)
             repoA.updateConfig { it.copy(savingsGoalLabel = "Vélo", savingsGoalAmount = 400.0) }
+            repoA.setTriggerPlan("CAFE", "Un verre d'eau")
+            repoA.saveCheckIn(CheckInEntity(epochDay = 20000, timestamp = 1L, mood = 4, note = "Bonne journée", hunger = 2))
             val exported = repoA.exportJson()
 
             val repoB = ExitRepository(b, json)
@@ -85,6 +90,8 @@ class ExitDatabaseTest {
             assertEquals(a.config().get(), b.config().get())
             assertEquals(2, b.cravings().all().single().intensityEnd)
             assertEquals("Vélo", b.config().get()!!.savingsGoalLabel)
+            assertEquals("Un verre d'eau", TriggerPlans.parse(b.config().get()!!.triggerPlans)["CAFE"])
+            assertEquals(a.checkIns().all(), b.checkIns().all())
         } finally {
             a.close()
             b.close()

@@ -55,6 +55,14 @@ class GainsAndStatsTest {
     }
 
     @Test
+    fun `heures à risque, au moins 4 occurrences sur 14 jours`() {
+        val smokes = (0 until 5).map { SmokeEntity(id = it + 1L, timestamp = at(it.toLong(), 10, 15), trigger = "CAFE") } +
+            (0 until 2).map { SmokeEntity(id = it + 10L, timestamp = at(it.toLong(), 18)) }
+        val risk = StatsCalculator.riskHours(smokes, emptyList(), at(6, 12), zone)
+        assertEquals(listOf(10 to Trigger.CAFE), risk)
+    }
+
+    @Test
     fun `jalons santé, progression vers le prochain`() {
         assertEquals(20L, HealthMilestones.next(0)!!.minutes)
         assertEquals(1, HealthMilestones.reached(25).size)
